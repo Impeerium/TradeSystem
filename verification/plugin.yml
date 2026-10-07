@@ -1,0 +1,5 @@
+name: TradeSystemCompatibilityProbe
+version: '1.0'
+main: TradeSystemCompatibilityProbe
+api-version: '1.21'
+softdepend: [TradeSystem]

@@ -1,3 +1,18 @@
+# Impeerium TradeSystem
+
+This fork tracks [upstream TradeSystem](https://github.com/erikzimmermann/TradeSystem)
+and adds Minecraft 26.3 compatibility while retaining Minecraft 26.2 support.
+
+The shared `2.6.3_Hotfix-9-impeerium.1` build includes the latest upstream
+`develop` changes and pins [CodingAPI PR #37](https://github.com/erikzimmermann/CodingAPI/pull/37)
+at commit `9a7230cd80502f6e6a092370370e5095cca49851`. That patch updates sign text
+collections and the front-side sign editor API. It is an unmerged upstream fix,
+not a newer official TradeSystem release.
+
+Build with JDK 21 and Maven: `mvn -B -ntp clean verify`. The installable shaded
+JAR is in `TradeSystem-Bundle/target/`. See [AGENTS.md](AGENTS.md) for deployment
+and [verification/README.md](verification/README.md) for isolated compatibility checks.
+
 [![](https://jitpack.io/v/CodingAir/TradeSystem.svg)](https://jitpack.io/#CodingAir/TradeSystem)
 
 # API
