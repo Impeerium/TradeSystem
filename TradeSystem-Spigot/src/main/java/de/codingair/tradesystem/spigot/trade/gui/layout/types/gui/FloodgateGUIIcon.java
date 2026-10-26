@@ -16,6 +16,7 @@ import de.codingair.tradesystem.spigot.trade.gui.layout.types.utils.TriFunction;
 import de.codingair.tradesystem.spigot.trade.gui.layout.utils.Perspective;
 import de.codingair.tradesystem.spigot.utils.FloodgateUtils;
 import de.codingair.tradesystem.spigot.utils.Lang;
+import de.codingair.tradesystem.spigot.localization.PlayerText;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.ClickType;
@@ -52,12 +53,12 @@ public abstract class FloodgateGUIIcon<G> implements TradeIcon, Clickable, State
     @Override
     public @NotNull Button getButton(@NotNull Trade trade, @NotNull Perspective perspective, @NotNull Player viewer) {
         if (!FloodgateUtils.isBedrockPlayer(viewer))
-            return new Item(prepareItemStack(new ItemBuilder(item), trade, perspective, viewer).getItem());
+            return new Item(buildItemStack(new ItemBuilder(item), trade, perspective, viewer));
 
         return new FloodgateButton() {
             @Override
             public @Nullable ItemStack buildItem() {
-                return prepareItemStack(new ItemBuilder(item), trade, perspective, viewer).getItem();
+                return buildItemStack(new ItemBuilder(item), trade, perspective, viewer);
             }
 
             @Override
@@ -98,8 +99,8 @@ public abstract class FloodgateGUIIcon<G> implements TradeIcon, Clickable, State
             else def = makeString(trade, perspective, viewer, getValue(), true);
 
             FloodgateApi.getInstance().sendForm(player.getUniqueId(), CustomForm.builder()
-                    .title(Lang.get("GUI_Title", viewer, new Lang.P("player", trade.getNames()[perspective.isPrimary() ? 1 : 0])))
-                    .input(Lang.get("Economy_Offer_Title", viewer), "0", def)
+                    .title(PlayerText.caption(trade, viewer, "GUI_Title", new Lang.P("player", trade.getNames()[perspective.isPrimary() ? 1 : 0])))
+                    .input(PlayerText.caption(trade, viewer, "Economy_Offer_Title"), "0", def)
                     .validResultHandler(response -> {
                         String input = response.asInput();
                         if (input == null) input = "";

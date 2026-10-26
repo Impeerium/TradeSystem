@@ -17,4 +17,13 @@ public interface ItemPrepareIcon {
      * @return An {@link ItemBuilder} used to build an {@link ItemStack} to represent this trade icon in the trade GUI.
      */
     @NotNull ItemBuilder prepareItemStack(@NotNull ItemBuilder layout, @NotNull Trade trade, @NotNull Perspective perspective, @NotNull Player viewer);
+
+    /** Final presentation sink: native item construction finishes before owned components are applied. */
+    default ItemStack buildItemStack(ItemBuilder layout, Trade trade, Perspective perspective, Player viewer) {
+        return finishPresentation(prepareItemStack(layout, trade, perspective, viewer).getItem(), trade, perspective, viewer);
+    }
+
+    default ItemStack finishPresentation(ItemStack nativeItem, Trade trade, Perspective perspective, Player viewer) {
+        return nativeItem;
+    }
 }

@@ -7,6 +7,9 @@ import de.codingair.tradesystem.spigot.trade.gui.layout.types.feedback.FinishRes
 import de.codingair.tradesystem.spigot.trade.gui.layout.types.feedback.IconResult;
 import de.codingair.tradesystem.spigot.trade.gui.layout.utils.Perspective;
 import de.codingair.tradesystem.spigot.utils.Lang;
+import de.codingair.tradesystem.spigot.localization.PlayerItems;
+import de.codingair.tradesystem.spigot.localization.PlayerText;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.ItemStack;
@@ -19,6 +22,12 @@ import java.io.IOException;
 public class CancelIcon extends SimpleTradeIcon {
     public CancelIcon(@NotNull ItemStack itemStack) {
         super(itemStack);
+    }
+
+    @Override
+    public ItemStack finishPresentation(ItemStack item, Trade trade, Perspective perspective, Player viewer) {
+        PlayerText.View view = trade.presentationView(viewer);
+        return view == null ? item : PlayerItems.named(item, view.render("cancel_trade").color(NamedTextColor.RED));
     }
 
     @Override

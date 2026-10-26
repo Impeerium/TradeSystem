@@ -6,6 +6,11 @@ import de.codingair.tradesystem.spigot.trade.gui.layout.types.Transition;
 import de.codingair.tradesystem.spigot.trade.gui.layout.types.utils.SimpleShowIcon;
 import de.codingair.tradesystem.spigot.trade.gui.layout.utils.Perspective;
 import de.codingair.tradesystem.spigot.utils.Lang;
+import de.codingair.tradesystem.spigot.localization.PlayerItems;
+import de.codingair.tradesystem.spigot.localization.PlayerText;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+import java.util.Map;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
@@ -29,6 +34,16 @@ public abstract class ShowEconomyIcon extends SimpleShowIcon<BigDecimal> impleme
         if (value.signum() > 0) layout.addEnchantmentEffect();
 
         return layout;
+    }
+
+    @Override
+    public ItemStack finishPresentation(ItemStack item, Trade trade, Perspective perspective, Player viewer) {
+        PlayerText.View view = trade.presentationView(viewer);
+        if (view == null) return item;
+        Component unit = view.owns(namePlural) ? view.render(namePlural)
+                : Component.text(de.codingair.codingapi.utils.ChatColor.stripColor(getName(viewer)));
+        return PlayerItems.named(item, view.render("economy_value", Map.of("type", unit,
+                "amount", makeString(trade, perspective, viewer, value))).color(NamedTextColor.YELLOW));
     }
 
     /**

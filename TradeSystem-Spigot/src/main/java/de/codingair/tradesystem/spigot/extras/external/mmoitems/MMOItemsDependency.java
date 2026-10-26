@@ -24,7 +24,7 @@ public class MMOItemsDependency implements PluginDependency, Listener {
 
     @EventHandler
     public void onReport(TradeReportEvent e) {
-        e.setItemReport(e.getResult().buildItemReport(item -> {
+        e.setComponentItemReport(e.getResult().buildItemReport(item -> {
             String type = getMmoId(item);
             if (type == null || type.isEmpty()) type = item.getType().name();
 
@@ -37,7 +37,11 @@ public class MMOItemsDependency implements PluginDependency, Listener {
             }
 
             return PlayerTradeResult.formatName(type);
-        }));
+        }), item -> {
+            String type = getMmoId(item);
+            if (type == null || type.isEmpty()) type = item.getType().name();
+            return PlayerTradeResult.componentItemName(item, PlayerTradeResult.formatName(type));
+        });
     }
 
     @Nullable
@@ -64,7 +68,7 @@ public class MMOItemsDependency implements PluginDependency, Listener {
     }
 
     @Nullable
-    private String getMmoId(@NotNull ItemStack item) {
+    protected String getMmoId(@NotNull ItemStack item) {
         return MMOItems.getID(item);
     }
 

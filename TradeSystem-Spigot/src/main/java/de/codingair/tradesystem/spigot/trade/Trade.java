@@ -54,6 +54,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.stream.Stream;
+import de.codingair.tradesystem.spigot.localization.PlayerText;
+import de.codingair.tradesystem.spigot.localization.TradeReports;
 
 public abstract class Trade {
     protected final String[] names = new String[2];
@@ -63,6 +65,7 @@ public abstract class Trade {
     protected final List<Integer> slots = new ArrayList<>();
     protected final List<Integer> otherSlots = new ArrayList<>();
     private final Set<Runnable> subscribers = new HashSet<>();
+    private final Map<UUID, PlayerText.View> presentationViews = new java.util.concurrent.ConcurrentHashMap<>();
 
     protected final boolean[] ready = new boolean[]{false, false};
     protected final boolean[] pause = new boolean[]{false, false};
@@ -77,6 +80,11 @@ public abstract class Trade {
         this.initiationServer = initiationServer;
         this.names[0] = player0;
         this.names[1] = player1;
+    }
+
+    /** Retain language for the whole transaction and its nested inputs; never rebuild on preference changes. */
+    public PlayerText.View presentationView(Player viewer) {
+        return presentationViews.computeIfAbsent(viewer.getUniqueId(), ignored -> PlayerText.capture(viewer));
     }
 
     /**
@@ -669,7 +677,14 @@ public abstract class Trade {
     }
 
     private void callEconomyError() {
-        cancel(Lang.getPrefix() + Lang.get("Economy_Error"));
+        cancelWithReason("Economy_Error", null);
+    }
+
+    /** Local recipients get an owned reason; existing logs and proxy peers keep the native payload. */
+    public void cancelWithReason(@NotNull String key, @Nullable Player nativeContext) {
+        if (!Set.of("Economy_Error", "Trade_cancelled_by_attack").contains(key))
+            throw new IllegalArgumentException("Not an owned cancellation reason");
+        cancel(Lang.getPrefix() + Lang.get(key, nativeContext), false, key);
     }
 
     protected void cancelling(@Nullable String message) {
@@ -680,6 +695,10 @@ public abstract class Trade {
     }
 
     public synchronized void cancel(@Nullable String message, boolean alreadyCalled) {
+        cancel(message, alreadyCalled, null);
+    }
+
+    private synchronized void cancel(@Nullable String message, boolean alreadyCalled, @Nullable String ownedReason) {
         if (cancelling) return;  // already cancelling
 
         TradeResult[] results = createResults();
@@ -709,26 +728,27 @@ public abstract class Trade {
         if (message != null) {
             if (initiationServer)
                 TradeLogService.log(names[0], names[1], TradeLog.CANCELLED_WITH_REASON.get(message));
-            sendMessage(message);
+            if (ownedReason == null) sendMessage(message);
+            else getViewers().forEach(player -> PlayerText.notice(this, player, ownedReason, () -> message));
         } else {
             if (initiationServer) TradeLogService.log(names[0], names[1], TradeLog.CANCELLED.get());
 
             getViewers().forEach(player -> {
                 Perspective perspective = getPerspective(player);
 
-                if (perspective.isMain()) {
-                    String m = Lang.getPrefix() + getPlaceholderMessage(perspective, "Trade_Was_Cancelled");
-                    sendMessage(perspective, m);
-                } else {
-                    Lang.send(player, "Trade_Was_Cancelled");
-                }
+                PlayerText.notice(this, player, "Trade_Was_Cancelled", () -> {
+                    if (perspective.isMain()) sendMessage(perspective,
+                            Lang.getPrefix() + getPlaceholderMessage(perspective, "Trade_Was_Cancelled"));
+                    else Lang.send(player, "", "Trade_Was_Cancelled", (sender, text) -> sender.sendMessage(text));
+                });
             });
         }
 
 
         for (Perspective perspective : Perspective.main()) {
             if (droppedItems[perspective.id()]) {
-                sendMessage(perspective, Lang.getPrefix() + getPlaceholderMessage(perspective, "Items_Dropped"));
+                getPlayerOpt(perspective).ifPresent(player -> PlayerText.notice(this, player, "Items_Dropped",
+                        () -> Lang.getPrefix() + getPlaceholderMessage(perspective, "Items_Dropped")));
             }
         }
 
@@ -742,12 +762,43 @@ public abstract class Trade {
             TradeReportEvent e = getPlayerOpt(perspective.flip())
                     .map(other -> new TradeReportEvent(player, other, playerResult))
                     .orElseGet(() -> new TradeReportEvent(player, names[perspective.flip().id()], getUniqueId(perspective.flip()), playerResult));
-            Bukkit.getPluginManager().callEvent(e);
-
-            if (!e.isCancelled())
-                player.sendMessage(buildFinishMessages(player, perspective, droppedItems, playerResult, e));
-            if (e.isPlayFinishSound()) TradeSystem.handler().playFinishSound(player);
+            try {
+                Bukkit.getPluginManager().callEvent(e);
+                if (!e.isCancelled()) sendFinishReport(player, perspective, droppedItems, playerResult, e);
+            } catch (RuntimeException | LinkageError presentationFailure) {
+                // Items have already moved. Presentation must not abort economy settlement/cleanup.
+                TradeReports.failure(presentationFailure);
+            } finally {
+                if (e.isPlayFinishSound()) {
+                    try {
+                        TradeSystem.handler().playFinishSound(player);
+                    } catch (RuntimeException | LinkageError presentationFailure) {
+                        TradeReports.failure(presentationFailure);
+                    }
+                }
+            }
         }
+    }
+
+    private void sendFinishReport(Player viewer, Perspective perspective, boolean droppedItems,
+                                  PlayerTradeResult result, TradeReportEvent event) {
+        List<TradeReports.Line> messages;
+        try {
+            messages = TradeReports.prepare(this, viewer, droppedItems, result, event);
+            if (messages == null) messages = Arrays.stream(buildFinishMessages(viewer, perspective, droppedItems, result, event))
+                    .map(TradeReports.Line::nativeText).toList();
+        } catch (RuntimeException | LinkageError presentationFailure) {
+            TradeReports.failure(presentationFailure);
+            // Nothing has been sent yet. Fall back to the native completion/overflow notices only.
+            messages = new ArrayList<>();
+            messages.add(TradeReports.Line.nativeText(Lang.getPrefix() + getPlaceholderMessage(perspective, "Trade_Was_Finished")));
+            if (droppedItems) {
+                messages.add(TradeReports.Line.nativeText(""));
+                messages.add(TradeReports.Line.nativeText(Lang.getPrefix() + Lang.get("Items_Dropped", viewer)));
+            }
+        }
+        // If output fails partway through, the outer report fence stops it without replaying any lines.
+        for (TradeReports.Line message : messages) message.send(viewer);
     }
 
     private void postFinish(@NotNull Perspective perspective) {

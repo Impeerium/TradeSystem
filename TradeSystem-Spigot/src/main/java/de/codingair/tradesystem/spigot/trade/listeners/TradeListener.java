@@ -84,7 +84,7 @@ public class TradeListener implements Listener, ChatButtonListener {
             if (trade != null) {
                 double finalDamage = e.getFinalDamage();
                 if ((TradeSystem.getInstance().getTradeManager().isCancelOnDamage() && finalDamage > 0) || (player.getHealth() - e.getFinalDamage() <= 0))
-                    trade.cancel(Lang.getPrefix() + Lang.get("Trade_cancelled_by_attack", player));
+                    trade.cancelWithReason("Trade_cancelled_by_attack", player);
             }
         }
     }

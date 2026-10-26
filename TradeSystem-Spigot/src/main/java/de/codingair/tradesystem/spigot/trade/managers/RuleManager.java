@@ -5,6 +5,7 @@ import de.codingair.codingapi.player.chat.SimpleMessage;
 import de.codingair.tradesystem.proxy.packets.TradeInvitePacket;
 import de.codingair.tradesystem.spigot.TradeSystem;
 import de.codingair.tradesystem.spigot.utils.Lang;
+import de.codingair.tradesystem.spigot.localization.PlayerText;
 import de.codingair.tradesystem.spigot.utils.Permissions;
 import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.entity.Player;
@@ -179,6 +180,7 @@ public class RuleManager {
     }
 
     private static void notifyOfflinePlayer(Player p) {
+        if (PlayerText.offlineNotice(p)) return;
         String text = Lang.get("Trade_You_are_Offline", p);
         if (text.isEmpty()) return;
 

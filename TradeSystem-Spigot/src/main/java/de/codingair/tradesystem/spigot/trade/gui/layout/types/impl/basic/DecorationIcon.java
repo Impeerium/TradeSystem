@@ -8,10 +8,29 @@ import de.codingair.tradesystem.spigot.trade.gui.layout.utils.Perspective;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
+import de.codingair.tradesystem.spigot.localization.PlayerItems;
+import de.codingair.tradesystem.spigot.localization.PlayerText;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextColor;
+import java.util.List;
 
 public class DecorationIcon extends ShowIcon {
     public DecorationIcon(@NotNull ItemStack itemStack) {
         super(itemStack);
+    }
+
+    @Override
+    public ItemStack finishPresentation(ItemStack item, Trade trade, Perspective perspective, Player viewer) {
+        PlayerText.View view = trade.presentationView(viewer);
+        if (view == null || !PlayerItems.isDefaultHelp(getItemStack())) return item;
+        TextColor lore = TextColor.color(0xC7FFC6);
+        Component nativeName = item.getItemMeta() == null ? null : item.getItemMeta().displayName();
+        Component name = nativeName == null || PlayerItems.plain(nativeName).isEmpty()
+                ? null : view.render("decoration_title").color(NamedTextColor.WHITE);
+        return PlayerItems.text(item, name,
+                List.of(Component.empty(), view.render("decoration_help_offer").color(lore),
+                        view.render("decoration_help_ready").color(lore)));
     }
 
     @Override

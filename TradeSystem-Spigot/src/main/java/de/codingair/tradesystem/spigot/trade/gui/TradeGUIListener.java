@@ -11,6 +11,7 @@ import de.codingair.tradesystem.spigot.trade.gui.layout.shulker.ShulkerPeekGUI;
 import de.codingair.tradesystem.spigot.trade.gui.layout.utils.Perspective;
 import de.codingair.tradesystem.spigot.utils.CompatibilityUtilEvent;
 import de.codingair.tradesystem.spigot.utils.Lang;
+import de.codingair.tradesystem.spigot.localization.PlayerText;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -34,14 +35,16 @@ public class TradeGUIListener implements Listener {
         configuration.isItemAllowedInInventory = (items, slots) -> {
             for (ItemStack item : items) {
                 if (TradeSystem.getInstance().getTradeManager().isBlocked(trade, player, trade.getPlayer(other), trade.getNames()[other.id()], trade.getUniqueId(other), item)) {
-                    Lang.send(player, "Trade_Placed_Blocked_Item");
+                    PlayerText.notice(trade, player, "Trade_Placed_Blocked_Item",
+                            () -> Lang.send(player, "", "Trade_Placed_Blocked_Item", (sender, text) -> sender.sendMessage(text)));
                     TradeSystem.getInstance().getTradeManager().playBlockSound(player);
                     return false;
                 }
             }
 
             if (!TradeSystem.getInstance().getTradeManager().isDropItems() && !trade.fitsTrade(perspective, items)) {
-                Lang.send(player, "Trade_Partner_No_Space");
+                PlayerText.notice(trade, player, "Trade_Partner_No_Space",
+                        () -> Lang.send(player, "", "Trade_Partner_No_Space", (sender, text) -> sender.sendMessage(text)));
                 TradeSystem.getInstance().getTradeManager().playBlockSound(player);
                 return false;
             }
@@ -186,7 +189,7 @@ public class TradeGUIListener implements Listener {
         TradingGUI tradingGUI = trade.getGUIs()[perspective.id()];
         try {
             assert e.getCurrentItem() != null;
-            tradingGUI.openNestedGUI(new ShulkerPeekGUI(player, e.getCurrentItem(), owner), true, true);
+            tradingGUI.openNestedGUI(new ShulkerPeekGUI(player, e.getCurrentItem(), owner, trade.presentationView(player)), true, true);
         } catch (AlreadyOpenedException | NoPageException | IsWaitingException ex) {
             throw new RuntimeException(ex);
         }

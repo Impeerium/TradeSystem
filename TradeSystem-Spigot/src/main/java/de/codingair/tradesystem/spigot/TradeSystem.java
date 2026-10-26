@@ -31,6 +31,7 @@ import de.codingair.tradesystem.spigot.transfer.ProxyDataListener;
 import de.codingair.tradesystem.spigot.transfer.SpigotHandler;
 import de.codingair.tradesystem.spigot.utils.BackwardSupport;
 import de.codingair.tradesystem.spigot.utils.Lang;
+import de.codingair.tradesystem.spigot.localization.PlayerText;
 import de.codingair.tradesystem.spigot.utils.Permissions;
 import de.codingair.tradesystem.spigot.utils.updates.NotifyListener;
 import de.codingair.tradesystem.spigot.utils.updates.UpdateNotifier;
@@ -105,6 +106,7 @@ public class TradeSystem extends JavaPlugin implements Proxy {
 
         printConsoleInfo(() -> {
             loadConfigFiles();
+            PlayerText.initialize(this);
             new BackwardSupport();
 
             IconHandler.init();  // create icon controller
@@ -148,6 +150,7 @@ public class TradeSystem extends JavaPlugin implements Proxy {
 
         printConsoleInfo(() -> {
             tradeHandler.disable();
+            PlayerText.close();
 
             if (tradeCMD != null) tradeCMD.unregister();
             if (tradeSystemCMD != null) tradeSystemCMD.unregister();

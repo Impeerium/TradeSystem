@@ -6,6 +6,7 @@ import de.codingair.tradesystem.spigot.TradeSystem;
 import de.codingair.tradesystem.spigot.events.TradeRequestEvent;
 import de.codingair.tradesystem.spigot.utils.FloodgateUtils;
 import de.codingair.tradesystem.spigot.utils.Lang;
+import de.codingair.tradesystem.spigot.localization.PlayerText;
 import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.chat.ClickEvent;
 import net.md_5.bungee.api.chat.HoverEvent;
@@ -69,6 +70,11 @@ public class RequestManager {
 
     @SuppressWarnings ("deprecation")
     public static void sendRequest(String player, Player recipient) {
+        boolean bedrock = FloodgateUtils.isBedrockPlayer(recipient);
+        if (PlayerText.invitation(player, recipient, bedrock)) {
+            if (!bedrock) TradeSystem.getInstance().getTradeManager().playRequestSound(recipient);
+            return;
+        }
         if (FloodgateUtils.isBedrockPlayer(recipient)) {
             Lang.send(recipient, "Want_To_Trade_Bedrock", new Lang.P("player", player));
             return;

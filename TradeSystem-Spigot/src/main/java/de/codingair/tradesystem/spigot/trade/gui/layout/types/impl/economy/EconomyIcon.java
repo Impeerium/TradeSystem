@@ -13,6 +13,11 @@ import de.codingair.tradesystem.spigot.trade.gui.layout.types.feedback.FinishRes
 import de.codingair.tradesystem.spigot.trade.gui.layout.types.feedback.IconResult;
 import de.codingair.tradesystem.spigot.trade.gui.layout.utils.Perspective;
 import de.codingair.tradesystem.spigot.utils.Lang;
+import de.codingair.tradesystem.spigot.localization.PlayerItems;
+import de.codingair.tradesystem.spigot.localization.PlayerText;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+import java.util.List;
 import org.bukkit.Bukkit;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
@@ -54,7 +59,8 @@ public abstract class EconomyIcon<T extends Transition.Consumer<BigDecimal> & Tr
         if (player == null) return false;
 
         if (getBalance(player).signum() <= 0) {
-            Lang.send(player, "Balance_limit_reached");
+            if (!PlayerText.send(trade, viewer, "Balance_limit_reached", Map.of()))
+                Lang.send(viewer, "Balance_limit_reached");
             return false;
         }
 
@@ -83,7 +89,8 @@ public abstract class EconomyIcon<T extends Transition.Consumer<BigDecimal> & Tr
     @Override
     public IconResult processInput(@NotNull Trade trade, @NotNull Perspective perspective, @NotNull Player viewer, @Nullable BigDecimal input, @NotNull String origin) {
         if (input == null || input.signum() == -1) {
-            Lang.send(viewer, "Enter_Correct_Amount");
+            if (!PlayerText.send(trade, viewer, "Enter_Correct_Amount", Map.of()))
+                Lang.send(viewer, "Enter_Correct_Amount");
             return IconResult.GUI;
         }
 
@@ -93,7 +100,8 @@ public abstract class EconomyIcon<T extends Transition.Consumer<BigDecimal> & Tr
         // this might already be caught by converting the input to the max allowed value
         boolean isDecimal = input.remainder(BigDecimal.ONE).signum() != 0;
         if (!decimal && isDecimal) {
-            Lang.send(viewer, "Enter_Correct_Amount");
+            if (!PlayerText.send(trade, viewer, "Enter_Correct_Amount", Map.of()))
+                Lang.send(viewer, "Enter_Correct_Amount");
             return IconResult.GUI;
         }
 
@@ -102,7 +110,12 @@ public abstract class EconomyIcon<T extends Transition.Consumer<BigDecimal> & Tr
 
         BigDecimal max = getBalance(player);
         if (input.compareTo(max) > 0) {
-            Lang.send(viewer, "Only_X_Amount", new Lang.P("amount", makeString(trade, perspective, viewer, max, true)), new Lang.P("type", getName(viewer, max.equals(BigDecimal.ONE))));
+            boolean singular = max.compareTo(BigDecimal.ONE) == 0;
+            PlayerText.View view = trade.presentationView(viewer);
+            if (view == null || !PlayerText.send(trade, viewer, "Only_X_Amount", Map.of(
+                    "amount", makeString(trade, perspective, viewer, max, true),
+                    "type", nameComponent(view, viewer, singular))))
+                Lang.send(viewer, "Only_X_Amount", new Lang.P("amount", makeString(trade, perspective, viewer, max, true)), new Lang.P("type", getName(viewer, singular)));
             return IconResult.GUI;
         }
 
@@ -160,12 +173,29 @@ public abstract class EconomyIcon<T extends Transition.Consumer<BigDecimal> & Tr
         Player player = trade.getPlayer(perspective);
         if (player == null) throw new NullPointerException("Player with perspective " + perspective + " is null");
 
-        layout.setName("§e" + getName(player, false) + ": §7" + makeString(trade, perspective, player, value, true));
+        layout.setName("§e" + getName(viewer, false) + ": §7" + makeString(trade, perspective, viewer, value, true));
 
         layout.addLore("", "§7» " + Lang.get("Click_To_Change", viewer));
         if (value.signum() > 0) layout.addEnchantmentEffect();
 
         return layout;
+    }
+
+    @Override
+    public ItemStack finishPresentation(ItemStack item, Trade trade, Perspective perspective, Player viewer) {
+        PlayerText.View view = trade.presentationView(viewer);
+        if (view == null) return item;
+        Component name = view.render("economy_value", Map.of("type", nameComponent(view, viewer, false),
+                "amount", makeString(trade, perspective, viewer, value, true))).color(NamedTextColor.YELLOW);
+        return PlayerItems.replaceTail(item, name,
+                List.of("", "» " + de.codingair.codingapi.utils.ChatColor.stripColor(Lang.get("Click_To_Change", viewer))),
+                List.of(Component.empty(), Component.text("» ", NamedTextColor.GRAY)
+                        .append(view.render("click_to_change").color(NamedTextColor.GRAY))));
+    }
+
+    public Component nameComponent(PlayerText.View view, Player viewer, boolean singular) {
+        String key = singular ? nameSingular : namePlural;
+        return view.owns(key) ? view.render(key) : Component.text(de.codingair.codingapi.utils.ChatColor.stripColor(getName(viewer, singular)));
     }
 
     @NotNull

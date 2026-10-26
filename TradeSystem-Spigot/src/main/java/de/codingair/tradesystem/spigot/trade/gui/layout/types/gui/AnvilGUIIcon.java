@@ -13,6 +13,7 @@ import de.codingair.tradesystem.spigot.trade.gui.layout.types.utils.IconState;
 import de.codingair.tradesystem.spigot.trade.gui.layout.types.utils.TriFunction;
 import de.codingair.tradesystem.spigot.trade.gui.layout.utils.Perspective;
 import de.codingair.tradesystem.spigot.utils.Lang;
+import de.codingair.tradesystem.spigot.localization.PlayerText;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.ClickType;
 import org.bukkit.event.inventory.InventoryClickEvent;
@@ -57,7 +58,7 @@ public abstract class AnvilGUIIcon<G> extends LayoutIcon implements TradeIcon, C
 
             @Override
             public ItemStack buildItem() {
-                return prepareItemStack(new ItemBuilder(getItemStack()), trade, perspective, viewer).getItem();
+                return buildItemStack(new ItemBuilder(getItemStack()), trade, perspective, viewer);
             }
 
             @Override
@@ -74,7 +75,7 @@ public abstract class AnvilGUIIcon<G> extends LayoutIcon implements TradeIcon, C
             public boolean canSwitch(ClickType clickType) {
                 return true;
             }
-        }.setTitle(Lang.get("Economy_Offer_Title", viewer));
+        }.setTitle(PlayerText.caption(trade, viewer, "Economy_Offer_Title"));
     }
 
     protected void handleResult(@NotNull TradeIcon icon, @NotNull GUI gui, @NotNull IconResult result, @NotNull Trade trade, @NotNull Perspective perspective, @NotNull Perspective viewer) {

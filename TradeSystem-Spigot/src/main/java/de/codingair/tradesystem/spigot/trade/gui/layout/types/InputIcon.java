@@ -40,6 +40,11 @@ public abstract class InputIcon<G> extends LayoutIcon implements TradeIcon, Clic
                 }
 
                 @Override
+                public ItemStack finishPresentation(ItemStack nativeItem, Trade trade, Perspective perspective, Player viewer) {
+                    return InputIcon.this.finishPresentation(nativeItem, trade, perspective, viewer);
+                }
+
+                @Override
                 public boolean isClickable(@NotNull Trade trade, @NotNull Perspective perspective, @NotNull Player viewer) {
                     return InputIcon.this.isClickable(trade, perspective, viewer);
                 }
@@ -152,6 +157,11 @@ public abstract class InputIcon<G> extends LayoutIcon implements TradeIcon, Clic
                     }
 
                     @Override
+                    public ItemStack finishPresentation(ItemStack nativeItem, Trade trade, Perspective perspective, Player viewer) {
+                        return InputIcon.this.finishPresentation(nativeItem, trade, perspective, viewer);
+                    }
+
+                    @Override
                     public boolean isClickable(@NotNull Trade trade, @NotNull Perspective perspective, @NotNull Player viewer) {
                         return InputIcon.this.isClickable(trade, perspective, viewer);
                     }
@@ -224,6 +234,11 @@ public abstract class InputIcon<G> extends LayoutIcon implements TradeIcon, Clic
                     @Override
                     public @NotNull ItemBuilder prepareItemStack(@NotNull ItemBuilder layout, @NotNull Trade trade, @NotNull Perspective perspective, @NotNull Player viewer) {
                         return InputIcon.this.prepareItemStack(layout, trade, perspective, viewer);
+                    }
+
+                    @Override
+                    public ItemStack finishPresentation(ItemStack nativeItem, Trade trade, Perspective perspective, Player viewer) {
+                        return InputIcon.this.finishPresentation(nativeItem, trade, perspective, viewer);
                     }
 
                     @Override

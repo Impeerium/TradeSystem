@@ -5,7 +5,9 @@ import de.codingair.tradesystem.spigot.events.TradeRequestEvent;
 import de.codingair.tradesystem.spigot.events.TradeRequestPreResponseEvent;
 import de.codingair.tradesystem.spigot.extras.external.PluginDependency;
 import de.codingair.tradesystem.spigot.utils.Lang;
+import de.codingair.tradesystem.spigot.localization.PlayerText;
 import org.bukkit.Location;
+import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
@@ -20,6 +22,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.stream.Stream;
+import java.util.function.BiConsumer;
 
 public class WorldGuardDependency implements PluginDependency, Listener {
     private WorldGuardAdapter adapter;
@@ -37,16 +40,16 @@ public class WorldGuardDependency implements PluginDependency, Listener {
         if (e.isAccepted()) {
             if (e.getReceivingPlayer() != null) {
                 if (invalidRegion(e.getReceivingPlayer())) {
-                    Lang.send(e.getReceivingPlayer(), "", "Cannot_trade_in_region", ($, s) -> e.sendMessage(e.getReceivingPlayer(), e.getReceiver(), s));
                     e.setCancelled(true);
+                    send(e.getReceivingPlayer(), "Cannot_trade_in_region", ($, s) -> e.sendMessage(e.getReceivingPlayer(), e.getReceiver(), s));
                     return;
                 }
             }
 
             if (e.getSendingPlayer() != null) {
                 if (invalidRegion(e.getSendingPlayer())) {
-                    Lang.send(e.getReceivingPlayer(), "", "Other_cannot_trade_in_region", ($, s) -> e.sendMessage(e.getReceivingPlayer(), e.getReceiver(), s));
                     e.setCancelled(true);
+                    send(e.getReceivingPlayer(), "Other_cannot_trade_in_region", ($, s) -> e.sendMessage(e.getReceivingPlayer(), e.getReceiver(), s));
                 }
             }
         }
@@ -56,18 +59,23 @@ public class WorldGuardDependency implements PluginDependency, Listener {
     public void onRequest(TradeRequestEvent e) {
         if (e.getSendingPlayer() != null) {
             if (invalidRegion(e.getSendingPlayer())) {
-                Lang.send(e.getSendingPlayer(), "", "Cannot_trade_in_region", ($, s) -> e.sendMessage(e.getSendingPlayer(), e.getSender(), s));
                 e.setCancelled(true);
+                send(e.getSendingPlayer(), "Cannot_trade_in_region", ($, s) -> e.sendMessage(e.getSendingPlayer(), e.getSender(), s));
                 return;
             }
         }
 
         if (e.getReceivingPlayer() != null) {
             if (invalidRegion(e.getReceivingPlayer())) {
-                Lang.send(e.getSendingPlayer(), "", "Other_cannot_trade_in_region", ($, s) -> e.sendMessage(e.getSendingPlayer(), e.getSender(), s));
                 e.setCancelled(true);
+                send(e.getSendingPlayer(), "Other_cannot_trade_in_region", ($, s) -> e.sendMessage(e.getSendingPlayer(), e.getSender(), s));
             }
         }
+    }
+
+    private static void send(@Nullable Player local, String key, BiConsumer<CommandSender, String> nativeSink) {
+        if (local == null) Lang.send(null, "", key, nativeSink);
+        else PlayerText.notice(local, key, () -> Lang.send(local, "", key, nativeSink));
     }
 
     private boolean invalidRegion(@NotNull Player player) {

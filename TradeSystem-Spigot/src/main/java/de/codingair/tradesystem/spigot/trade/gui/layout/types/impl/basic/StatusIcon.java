@@ -12,6 +12,12 @@ import de.codingair.tradesystem.spigot.trade.gui.layout.types.feedback.IconResul
 import de.codingair.tradesystem.spigot.trade.gui.layout.types.impl.cosmetics.PlayerHeadUtils;
 import de.codingair.tradesystem.spigot.trade.gui.layout.utils.Perspective;
 import de.codingair.tradesystem.spigot.utils.Lang;
+import de.codingair.tradesystem.spigot.localization.PlayerItems;
+import de.codingair.tradesystem.spigot.localization.PlayerText;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+import java.util.ArrayList;
+import java.util.List;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryClickEvent;
@@ -65,6 +71,15 @@ public class StatusIcon extends MultiTradeIcon {
         }
 
         @Override
+        public ItemStack finishPresentation(ItemStack item, Trade trade, Perspective perspective, Player viewer) {
+            PlayerText.View view = trade.presentationView(viewer);
+            if (view == null) return item;
+            return PlayerItems.replaceTail(item, view.render("status_ready").color(NamedTextColor.GRAY),
+                    List.of("", de.codingair.codingapi.utils.ChatColor.stripColor(Lang.get("Wait_For_Other_Player", viewer))),
+                    List.of(Component.empty(), view.render("wait_for_other_player").color(NamedTextColor.GRAY)));
+        }
+
+        @Override
         public @NotNull ItemBuilder prepareItemStack(@NotNull ItemBuilder layout, @NotNull Trade trade, @NotNull Perspective perspective, @NotNull Player viewer) {
             PlayerHeadUtils.applyPlayerHead(layout, viewer);
             layout.setName("§7" + Lang.get("Status", viewer) + ": §a" + Lang.get("Ready", viewer));
@@ -113,6 +128,12 @@ public class StatusIcon extends MultiTradeIcon {
         }
 
         @Override
+        public ItemStack finishPresentation(ItemStack item, Trade trade, Perspective perspective, Player viewer) {
+            PlayerText.View view = trade.presentationView(viewer);
+            return view == null ? item : PlayerItems.named(item, view.render("status_not_ready").color(NamedTextColor.GRAY));
+        }
+
+        @Override
         public @NotNull ItemBuilder prepareItemStack(@NotNull ItemBuilder layout, @NotNull Trade trade, @NotNull Perspective perspective, @NotNull Player viewer) {
             PlayerHeadUtils.applyPlayerHead(layout, viewer);
             layout.setName("§7" + Lang.get("Status", viewer) + ": §c" + Lang.get("Not_Ready", viewer));
@@ -157,6 +178,15 @@ public class StatusIcon extends MultiTradeIcon {
     public static class CannotReadyIcon extends SimpleTradeIcon {
         public CannotReadyIcon(@NotNull ItemStack itemStack) {
             super(itemStack);
+        }
+
+        @Override
+        public ItemStack finishPresentation(ItemStack item, Trade trade, Perspective perspective, Player viewer) {
+            PlayerText.View view = trade.presentationView(viewer);
+            if (view == null) return item;
+            List<Component> wrapped = new ArrayList<>(PlayerItems.wrappedCaption(view.render("trade_only_with_objects"), 150));
+            Component name = wrapped.isEmpty() ? Component.empty() : wrapped.remove(0);
+            return PlayerItems.text(item, name, wrapped);
         }
 
         @Override

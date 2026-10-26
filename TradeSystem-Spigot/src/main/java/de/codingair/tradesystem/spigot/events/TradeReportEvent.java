@@ -2,14 +2,19 @@ package de.codingair.tradesystem.spigot.events;
 
 import de.codingair.tradesystem.spigot.events.utils.TradeEvent;
 import de.codingair.tradesystem.spigot.trade.PlayerTradeResult;
+import net.kyori.adventure.text.Component;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
+import java.util.AbstractList;
+import java.util.ArrayList;
 import java.util.UUID;
+import java.util.function.Function;
 
 /**
  * Called when a player receives items or other goods from another player after a trade was completed. Can be used to control the trade report which will be sent via chat.
@@ -22,6 +27,7 @@ public class TradeReportEvent extends TradeEvent implements Cancellable {
     private final Player otherPlayer;
     private final PlayerTradeResult result;
     private List<String> itemReport;
+    private Function<ItemStack, Component> componentItemNameMapper;
     private List<String> economyReport;
     private boolean playFinishSound = true;
     private boolean cancelled = false;
@@ -129,6 +135,42 @@ public class TradeReportEvent extends TradeEvent implements Cancellable {
      */
     public void setItemReport(@Nullable List<String> itemReport) {
         this.itemReport = itemReport;
+        this.componentItemNameMapper = null;
+    }
+
+    /**
+     * Supply the existing string report and an explicitly component-native item-name
+     * mapper for recipient-aware default wording. A later setItemReport call takes
+     * precedence and clears this association, even when it supplies the same list.
+     */
+    public void setComponentItemReport(@NotNull List<String> legacyReport,
+                                       @NotNull Function<ItemStack, Component> itemNameMapper) {
+        java.util.Objects.requireNonNull(itemNameMapper);
+        this.itemReport = new AssociatedReport(legacyReport);
+        this.componentItemNameMapper = itemNameMapper;
+    }
+
+    @Nullable
+    public Function<ItemStack, Component> getComponentItemNameMapper() {
+        return componentItemNameMapper;
+    }
+
+    /** Track external edits without guessing ownership from the rendered text. */
+    private final class AssociatedReport extends AbstractList<String> {
+        private final List<String> lines;
+
+        private AssociatedReport(List<String> source) { lines = new ArrayList<>(source); }
+
+        private void changed() {
+            // A listener may still hold an older list after another listener replaced it.
+            if (itemReport == this) componentItemNameMapper = null;
+        }
+
+        @Override public String get(int index) { return lines.get(index); }
+        @Override public int size() { return lines.size(); }
+        @Override public String set(int index, String value) { String previous = lines.set(index, value);changed();return previous; }
+        @Override public void add(int index, String value) { lines.add(index, value);modCount++;changed(); }
+        @Override public String remove(int index) { String previous = lines.remove(index);modCount++;changed();return previous; }
     }
 
     /**

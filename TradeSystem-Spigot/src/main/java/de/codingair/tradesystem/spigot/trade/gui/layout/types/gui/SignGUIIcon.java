@@ -59,7 +59,7 @@ public abstract class SignGUIIcon<G> extends LayoutIcon implements TradeIcon, Cl
 
             @Override
             public ItemStack buildItem() {
-                return prepareItemStack(new ItemBuilder(getItemStack()), trade, perspective, viewer).getItem();
+                return buildItemStack(new ItemBuilder(getItemStack()), trade, perspective, viewer);
             }
 
             @Override

@@ -9,6 +9,9 @@ import de.codingair.codingapi.tools.items.ItemBuilder;
 import de.codingair.codingapi.tools.items.XMaterial;
 import de.codingair.tradesystem.spigot.utils.Head;
 import de.codingair.tradesystem.spigot.utils.Lang;
+import de.codingair.tradesystem.spigot.localization.PlayerItems;
+import de.codingair.tradesystem.spigot.localization.PlayerText;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.block.ShulkerBox;
 import org.bukkit.event.inventory.ClickType;
 import org.bukkit.event.inventory.InventoryClickEvent;
@@ -36,7 +39,10 @@ public class ShulkerPage extends Page {
         addButton(4, 3, new Button() {
             @Override
             public @Nullable ItemStack buildItem() {
-                return new ItemBuilder(Head.GRAY_ARROW_LEFT.getItem()).setName("§7" + Lang.get("Back")).getItem();
+                ItemStack nativeItem = new ItemBuilder(Head.GRAY_ARROW_LEFT.getItem()).setName("§7" + Lang.get("Back", gui.getPlayer())).getItem();
+                PlayerText.View presentation = ((ShulkerPeekGUI) gui).presentation();
+                return presentation == null ? nativeItem
+                        : PlayerItems.named(nativeItem, presentation.render("Back").color(NamedTextColor.GRAY));
             }
 
             @Override

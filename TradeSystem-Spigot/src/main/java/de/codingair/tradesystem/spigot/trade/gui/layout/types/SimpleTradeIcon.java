@@ -23,7 +23,7 @@ public abstract class SimpleTradeIcon extends LayoutIcon implements TradeIcon, C
 
             @Override
             public ItemStack buildItem() {
-                return prepareItemStack(new ItemBuilder(getItemStack()), trade, perspective, viewer).getItem();
+                return buildItemStack(new ItemBuilder(getItemStack()), trade, perspective, viewer);
             }
 
             @Override

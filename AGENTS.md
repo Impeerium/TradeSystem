@@ -1,13 +1,20 @@
 # TradeSystem on Impeerium
 
-Verified 2026-10-07. Read `/home/pterodactyl/network-ops/AGENTS.md` for the host agreement.
+Verified 2026-10-26. Read the active administrator agreement for the current host or developer container.
 
 - Maintained source: `https://github.com/Impeerium/TradeSystem`, default branch `develop`.
   Checkout: `/home/artur-admin/impeerium-dev/TradeSystem`.
   Upstream: `https://github.com/erikzimmermann/TradeSystem`, branch `develop`.
-- Build from the repository root with JDK 21 and Maven 3.9.9: `mvn -B -ntp clean verify`.
-  There is no Maven wrapper. Host tools are under
-  `/home/pterodactyl/impeerium-build/toolchain/{jdk-21.0.11+10,apache-maven-3.9.9}`.
+- Build from the repository root with JDK 25 and Maven 3.9.x: `mvn -B -ntp clean verify`.
+  The optional ImpeeriumAPI 1.11 and current Paper compile artifacts have Java 25
+  classfiles; the player component adapter requires that compiler. Packets retain
+  their Java 8 bytecode target and existing wire protocol. One shared build serves both current 26.x targets.
+  `-DimpeeriumApiRepository=file:///absolute/path/to/repository` selects the verified
+  API release repository when Packages is unavailable; default is the local Maven repo.
+  There is no Maven wrapper. Verified developer-container tools are under
+  `/home/istomol/.cache/impeerium-mechanics-tools/{jdk-25.0.4.1+1,apache-maven-3.9.16}`.
+  The earlier host JDK21 toolchain is sufficient only for the unmodified baseline;
+  locate a current JDK25 before building this API consumer on that host.
 - Deploy only the shaded `TradeSystem-Bundle/target/TradeSystem_v${version}.jar`,
   never `original-*`, `TradeSystem-Spigot` or `TradeSystem-Packets` artifacts.
   Plugin identity is `TradeSystem`, main class `de.codingair.tradesystem.spigot.TradeSystem`.
@@ -26,6 +33,12 @@ Verified 2026-10-07. Read `/home/pterodactyl/network-ops/AGENTS.md` for the host
   remain local to each server. They must not enter this repository.
 - JAR activation requires a server restart. Installing a JAR is not activation;
   use the host agreement's authorization and countdown procedure. Avoid hot reload.
+- Player ET/EN presentation uses optional ImpeeriumAPI1.11, retaining native files
+  when the API is absent/unavailable. Shared pack prerequisites are the additive
+  `impeerium:tradesystem_frames` and `impeerium:gui_label_p27` fonts with the neutral
+  trade frame; publish them before activating this consumer. Keep the old F813/F810
+  glyphs and each server's configured title/lock offsets. Client acceptance remains
+  a separate check from the unit suite and offline title previews.
 - `verification/` contains a disposable-server compatibility probe. Never deploy
   that probe to a real server: it intentionally shuts its test server down.
-  Build the plugin with JDK 21; compile/run the probe and 26.x servers with JDK 25.
+  Build the plugin and compile/run the probe and 26.x servers with JDK 25.

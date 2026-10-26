@@ -8,6 +8,8 @@ import de.codingair.tradesystem.spigot.extras.tradelog.TradeLog;
 import de.codingair.tradesystem.spigot.extras.tradelog.TradeLogService;
 import de.codingair.tradesystem.spigot.trade.Trade;
 import de.codingair.tradesystem.spigot.utils.Lang;
+import de.codingair.tradesystem.spigot.localization.PlayerText;
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import me.clip.placeholderapi.PlaceholderAPI;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -20,6 +22,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.Locale;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -63,20 +66,19 @@ public class PlaceholderDependency implements PluginDependency, Listener {
 
     @NotNull
     public static String convert(@NotNull String s, @NotNull Player player) {
-        if (instance.isAvailable()) return PlaceholderAPI.setPlaceholders(player, s);
+        if (instance != null && instance.isAvailable()) return PlaceholderAPI.setPlaceholders(player, s);
         else {
             Matcher m = PATTERN.matcher(s);
+            StringBuffer output = new StringBuffer();
             while (m.find()) {
                 String group = m.group();                                                      // includes "tradesystem" identifier
                 String id = group.substring(1 + IDENTIFIER.length() + 1, group.length() - 1);  // remove plugin identifier
 
                 String replacement = apply(player, id);
-                if (replacement == null) continue;
-
-                s = s.substring(0, m.start()) + replacement + s.substring(m.end());
+                m.appendReplacement(output, Matcher.quoteReplacement(replacement == null ? group : replacement));
             }
-
-            return s;
+            m.appendTail(output);
+            return output.toString();
         }
     }
 
@@ -92,10 +94,11 @@ public class PlaceholderDependency implements PluginDependency, Listener {
     }
 
     @Nullable
-    static String apply(@NotNull Player player, @NotNull String id) {
+    static String apply(@Nullable Player player, @NotNull String id) {
+        if (player == null) return null;
         Trade t = TradeSystem.handler().getTrade(player);
 
-        switch (id.toLowerCase()) {
+        switch (id.toLowerCase(Locale.ROOT)) {
             case "partner":
             case "trade_partner":
                 if (t != null) return t.getOther(player.getName());
@@ -110,13 +113,23 @@ public class PlaceholderDependency implements PluginDependency, Listener {
             case "countdown_fancy":
                 if (t != null && t.getCountdown() != null) {
                     int remaining = (int) Math.ceil((TradeSystem.handler().getCountdownInterval() * (TradeSystem.handler().getCountdownRepetitions() - t.getCountdownTicks())) / 20F);
-                    return Lang.get("Fancy_Countdown").replace("%seconds%", remaining + "");
+                    String nativeFormat = Lang.get("Fancy_Countdown");
+                    // Only the shipped textual template is owned here. Keep custom art/formatting exact.
+                    if (" &7- &e%seconds%s".equals(Lang.source("Fancy_Countdown"))) {
+                        PlayerText.View view = t.presentationView(player);
+                        if (view != null) return nativeFormat.replace("%seconds%s", PlainTextComponentSerializer.plainText()
+                                .serialize(view.render("Fancy_Countdown", Map.of("seconds", remaining))));
+                    }
+                    return nativeFormat.replace("%seconds%", remaining + "");
                 }
                 return "";
 
             case "status":
-                if (TradeSystem.handler().isOffline(player)) return Lang.get("Offline");
-                else return Lang.get("Online");
+                boolean disabled = TradeSystem.handler().isOffline(player);
+                PlayerText.View view = t == null ? PlayerText.capture(player) : t.presentationView(player);
+                if (view != null) return PlainTextComponentSerializer.plainText()
+                        .serialize(view.render(disabled ? "requests_disabled" : "requests_enabled"));
+                return Lang.get(disabled ? "Offline" : "Online");
 
             case "is_trading":
                 return t != null ? "true" : "false";

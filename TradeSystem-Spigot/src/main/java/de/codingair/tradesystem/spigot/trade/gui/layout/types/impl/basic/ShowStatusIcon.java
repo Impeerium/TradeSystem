@@ -7,6 +7,9 @@ import de.codingair.tradesystem.spigot.trade.gui.layout.types.TradeIcon;
 import de.codingair.tradesystem.spigot.trade.gui.layout.types.impl.cosmetics.PlayerHeadUtils;
 import de.codingair.tradesystem.spigot.trade.gui.layout.utils.Perspective;
 import de.codingair.tradesystem.spigot.utils.Lang;
+import de.codingair.tradesystem.spigot.localization.PlayerItems;
+import de.codingair.tradesystem.spigot.localization.PlayerText;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
@@ -47,6 +50,12 @@ public class ShowStatusIcon extends MultiTradeIcon {
         }
 
         @Override
+        public ItemStack finishPresentation(ItemStack item, Trade trade, Perspective perspective, Player viewer) {
+            PlayerText.View view = trade.presentationView(viewer);
+            return view == null ? item : PlayerItems.named(item, view.render("status_ready").color(NamedTextColor.GRAY));
+        }
+
+        @Override
         public @NotNull ItemBuilder prepareItemStack(@NotNull ItemBuilder layout, @NotNull Trade trade, @NotNull Perspective perspective, @NotNull Player viewer) {
             PlayerHeadUtils.applyPlayerHead(layout, trade.getPlayer(perspective.flip()), trade.getNames()[perspective.flip().id()]);
             return layout.setName("§7" + Lang.get("Status", viewer) + ": §a" + Lang.get("Ready", viewer));
@@ -56,6 +65,12 @@ public class ShowStatusIcon extends MultiTradeIcon {
     public static class ShowNotReadyIcon extends DecorationIcon {
         public ShowNotReadyIcon(@NotNull ItemStack itemStack) {
             super(itemStack);
+        }
+
+        @Override
+        public ItemStack finishPresentation(ItemStack item, Trade trade, Perspective perspective, Player viewer) {
+            PlayerText.View view = trade.presentationView(viewer);
+            return view == null ? item : PlayerItems.named(item, view.render("status_not_ready").color(NamedTextColor.GRAY));
         }
 
         @Override

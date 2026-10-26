@@ -4,6 +4,7 @@ import de.codingair.codingapi.files.ConfigFile;
 import de.codingair.codingapi.files.FileManager;
 import de.codingair.codingapi.utils.ChatColor;
 import de.codingair.tradesystem.spigot.TradeSystem;
+import de.codingair.tradesystem.spigot.localization.PlayerText;
 import de.codingair.tradesystem.spigot.extras.external.placeholderapi.PlaceholderDependency;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -141,6 +142,7 @@ public class Lang {
     }
 
     public static void send(@NotNull CommandSender sender, @NotNull String prefix, @NotNull String key, @NotNull P... placeholders) {
+        if (PlayerText.send(sender, prefix, key, placeholders)) return;
         send(sender, prefix, key, CommandSender::sendMessage, placeholders);
     }
 
@@ -163,6 +165,11 @@ public class Lang {
         String key = getConfig().getString("TradeSystem.Language");
         if (key == null) return "ENG";
         return key;
+    }
+
+    /** Unexpanded owner configuration for exact presentation bindings; never a rendered translation. */
+    public static String source(String key) {
+        return getLanguageFile(null, null, getLanguageKey()).getString(key, null);
     }
 
     private static @NotNull FileConfiguration getLanguageFile(@Nullable JavaPlugin plugin, @Nullable FileManager fileManager, @NotNull String langTag) {
@@ -240,6 +247,10 @@ public class Lang {
             this.placeholder = placeholder;
             this.replacement = replacement;
         }
+
+        public String name() { return placeholder; }
+
+        public String value() { return replacement; }
 
         @NotNull
         public String apply(@NotNull String s) {

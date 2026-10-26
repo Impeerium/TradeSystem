@@ -3,6 +3,7 @@ package de.codingair.tradesystem.spigot.trade.gui.layout.types.gui;
 import de.codingair.tradesystem.spigot.trade.Trade;
 import de.codingair.tradesystem.spigot.trade.gui.layout.utils.Perspective;
 import de.codingair.tradesystem.spigot.utils.Lang;
+import de.codingair.tradesystem.spigot.localization.PlayerText;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
@@ -18,10 +19,11 @@ public abstract class SimpleSignGUIIcon<G> extends SignGUIIcon<G> {
         String input = makeString(trade, perspective, viewer, getValue(), true);
 
         String[] text = new String[4];
+        java.util.Arrays.fill(text, "");
         text[0] = input;
 
-        String[] description = Lang.get("Sign_Enter_Amount").split("\n", 3);
-        System.arraycopy(description, 0, text, 1, 3);
+        String[] description = PlayerText.caption(trade, viewer, "Sign_Enter_Amount").split("\n", 3);
+        System.arraycopy(description, 0, text, 1, Math.min(3, description.length));
 
         return text;
     }
