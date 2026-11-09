@@ -1,6 +1,6 @@
 # TradeSystem on Impeerium
 
-Verified 2026-10-26. Read the active administrator agreement for the current host or developer container.
+Verified 2026-11-09. Read the active administrator agreement for the current host or developer container.
 
 - Maintained source: `https://github.com/Impeerium/TradeSystem`, default branch `develop`.
   Checkout: `/home/artur-admin/impeerium-dev/TradeSystem`.
@@ -15,6 +15,9 @@ Verified 2026-10-26. Read the active administrator agreement for the current hos
   `/home/istomol/.cache/impeerium-mechanics-tools/{jdk-25.0.4.1+1,apache-maven-3.9.16}`.
   The earlier host JDK21 toolchain is sufficient only for the unmodified baseline;
   locate a current JDK25 before building this API consumer on that host.
+  EngineHub serves an empty POM for `worldguard-bukkit:7.0.12` (its dependencies are only in
+  Gradle module metadata), so a fresh Maven repository fails on `WorldGuardAdapter`; build with a
+  local repository that also has `worldguard-core:7.0.12` and `worldedit-core`/`-bukkit:7.3.0`.
 - Deploy only the shaded `TradeSystem-Bundle/target/TradeSystem_v${version}.jar`,
   never `original-*`, `TradeSystem-Spigot` or `TradeSystem-Packets` artifacts.
   Plugin identity is `TradeSystem`, main class `de.codingair.tradesystem.spigot.TradeSystem`.
@@ -23,12 +26,19 @@ Verified 2026-10-26. Read the active administrator agreement for the current hos
   It supports 26.3's sign packet changes while retaining the 26.2 code path.
   Keep the dependency identical in the Spigot and Bundle modules; do not bundle
   a second unpatched CodingAPI transitively.
-- Both installed targets use `plugins/TradeSystem_v2.6.3_Hotfix-9.jar` beneath
+- All installed targets use `plugins/TradeSystem_v2.6.3_Hotfix-9.jar` beneath
   `/var/lib/pterodactyl/volumes/`:
   Factions `f25b6037-6e38-4d08-8494-0bf41467e9e5` (CannonLeaf 26.2),
-  Survival `c8890de8-a5c2-49a3-93fb-d315300c2816` (Leaf 26.3).
+  Survival `c8890de8-a5c2-49a3-93fb-d315300c2816` (Canvas 26.3, Folia, since 2026-11-09),
+  Events `70d01883-9711-4c0c-97a1-b817dd2408ef` (Canvas 26.3).
   Preserve owner/group 988:988, back up each JAR, atomically replace it, and
-  compare both SHA-256 values with the release artifact. Ship one identical JAR.
+  compare every SHA-256 value with the release artifact. Ship one identical JAR.
+- Folia (Canvas): the global region owns no player. Never use UniversalScheduler's plain
+  `runTask`/`runTaskLater`/`runTaskTimer` for work that touches a player's menu, inventory or
+  drops; use `trade/TradeThreads` (the trader's own scheduler) and keep the Paper branch unchanged.
+  Trade-wide work (countdown, `updateLater`) runs on the initiating trader's thread and checks
+  `Trade#colocated()`; a trade whose traders end up on different region threads is cancelled
+  half by half on each trader's own thread. `FoliaTradeThreadTest` covers this.
 - Existing `plugins/TradeSystem` configs, layouts, translations and databases
   remain local to each server. They must not enter this repository.
 - JAR activation requires a server restart. Installing a JAR is not activation;

@@ -352,6 +352,13 @@ public class TradeHandler {
             return;
         }
 
+        if (!TradeThreads.owns(player) || (other != null && !TradeThreads.owns(other))) {
+            // Folia: the accepting trader's thread may only open both menus while both traders share its region
+            Lang.send(player, "§c", "Player_is_not_in_range", new Lang.P("player", othersName));
+            if (other != null) Lang.send(other, "§c", "Player_is_not_in_range", new Lang.P("player", player.getName()));
+            return;
+        }
+
         MetricsManager.TRADES++;
 
         player.closeInventory();
@@ -370,11 +377,15 @@ public class TradeHandler {
     }
 
     private void registerTrade(@NotNull Trade trade, @NotNull String player) {
-        this.trades.put(player.toLowerCase(), trade);
+        synchronized (this.trades) {
+            this.trades.put(player.toLowerCase(), trade);
+        }
     }
 
     public void unregisterTrade(@NotNull String player) {
-        this.trades.remove(player.toLowerCase());
+        synchronized (this.trades) {
+            this.trades.remove(player.toLowerCase());
+        }
     }
 
     @NotNull
@@ -395,7 +406,10 @@ public class TradeHandler {
 
     private void cancelAll() {
         TradeSystem.log("  > Cancelling all active trades");
-        List<Trade> tradeList = new ArrayList<>(this.trades.values());
+        List<Trade> tradeList;
+        synchronized (this.trades) {
+            tradeList = new ArrayList<>(this.trades.values());
+        }
 
         for (Trade trade : tradeList) {
             trade.cancel();
@@ -410,7 +424,10 @@ public class TradeHandler {
     }
 
     public Trade getTrade(String player) {
-        return this.trades.get(player.toLowerCase());
+        // Folia: traders in different regions register and look up trades on different threads
+        synchronized (this.trades) {
+            return this.trades.get(player.toLowerCase());
+        }
     }
 
     public boolean isTrading(Player player) {

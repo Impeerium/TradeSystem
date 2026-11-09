@@ -17,12 +17,13 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class InvitationManager {
     /**
      * receiver name to invitations from others
      */
-    private final Map<String, Map<String, Invitation>> invitations = new HashMap<>();
+    private final Map<String, Map<String, Invitation>> invitations = new ConcurrentHashMap<>(); // Folia: requests from several region threads
     private MyScheduledTask expirationHandler = null;
 
     public void startExpirationHandler() {
@@ -128,7 +129,7 @@ public class InvitationManager {
         Invitation invitation = new Invitation(nameInviter, idInviter, proxy);
 
         instance().invitations
-                .computeIfAbsent(nameReceiver.toLowerCase(), $ -> new HashMap<>())
+                .computeIfAbsent(nameReceiver.toLowerCase(), $ -> new ConcurrentHashMap<>())
                 .put(nameInviter.toLowerCase(), invitation);
     }
 

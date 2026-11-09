@@ -51,6 +51,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.stream.Stream;
@@ -74,7 +75,15 @@ public abstract class Trade {
     protected Listener pickupListener;
     protected UniversalRunnable countdown = null;
     protected int countdownTicks = 0;
-    protected boolean cancelling = false;
+    protected volatile boolean cancelling = false;
+
+    /** Folia: halves of a cancel that found the traders on different region threads, by perspective id. */
+    private final Map<Integer, PendingSide> pendingSides = new ConcurrentHashMap<>();
+    /** Set once the finish event was called; no further cancellation may follow. */
+    private volatile boolean closed = false;
+
+    private record PendingSide(@NotNull Player player, @NotNull Runnable settle) {
+    }
 
     protected Trade(String player0, String player1, boolean initiationServer) {
         this.initiationServer = initiationServer;
@@ -372,6 +381,8 @@ public abstract class Trade {
      * Update displayed items and start countdown if both players are ready.
      */
     public void update() {
+        if (!guardThreads()) return;
+
         Set<Perspective> someChange = updateDisplayedItems();
         if (!someChange.isEmpty()) closeShulkerPeekingGUIs(someChange);
 
@@ -391,7 +402,42 @@ public abstract class Trade {
         subscribers.forEach(Runnable::run);
 
         // update inventory a tick later to fix some visualization bugs
-        UniversalScheduler.getScheduler(TradeSystem.getInstance()).runTask(() -> this.getViewers().forEach(Player::updateInventory));
+        if (TradeThreads.regionized()) this.getViewers().forEach(p -> TradeThreads.later(p, p::updateInventory, 1));
+        else UniversalScheduler.getScheduler(TradeSystem.getInstance()).runTask(() -> this.getViewers().forEach(Player::updateInventory));
+    }
+
+    /**
+     * Folia: true if the current thread owns every local trader, so the whole trade may be touched
+     * here. Traders start within trade range and therefore on one region thread; this is false only
+     * after one of them was moved away. Always true on Paper and while the plugin is disabling.
+     */
+    public boolean colocated() {
+        if (!TradeThreads.regionized() || !TradeSystem.getInstance().isEnabled()) return true;
+        return getParticipants().filter(Objects::nonNull).allMatch(TradeThreads::owns);
+    }
+
+    /**
+     * Folia: refuses to continue (and cancels the trade) if the traders are not both on this thread.
+     *
+     * @return True if the caller may touch both traders.
+     */
+    public boolean guardThreads() {
+        if (colocated()) return true;
+        if (!closed) cancel();
+        return false;
+    }
+
+    /**
+     * Runs trade-wide work later: on Folia on the initiating trader's own thread, else on the main thread.
+     */
+    private void later(long delay, @NotNull Runnable task) {
+        if (!TradeThreads.regionized()) {
+            UniversalScheduler.getScheduler(TradeSystem.getInstance()).runTaskLater(task, delay);
+            return;
+        }
+
+        Player anchor = getPlayer(Perspective.PRIMARY);
+        if (anchor != null) TradeThreads.later(anchor, task, delay);
     }
 
     private boolean setReadyState(@NotNull Perspective perspective, boolean ready) {
@@ -417,7 +463,7 @@ public abstract class Trade {
      * @param delay The delay in ticks.
      */
     public void updateLater(long delay) {
-        UniversalScheduler.getScheduler(TradeSystem.getInstance()).runTaskLater(this::update, delay);
+        later(delay, this::update);
     }
 
     /**
@@ -526,13 +572,22 @@ public abstract class Trade {
 
         int interval = TradeSystem.handler().getCountdownInterval();
         int repetitions = TradeSystem.handler().getCountdownRepetitions();
-        this.countdown = new UniversalRunnable() {
+        TradeCountdown timer = new TradeCountdown() {
             @Override
             public void run() {
                 if (!isActive()) {
                     this.cancel();
                     countdownTicks = 0;
                     countdown = null;
+                    return;
+                }
+
+                if (!colocated()) {
+                    // Folia: a trader was moved to another region thread; neither side may be finished from here.
+                    this.cancel();
+                    countdownTicks = 0;
+                    countdown = null;
+                    Trade.this.cancel();
                     return;
                 }
 
@@ -580,7 +635,9 @@ public abstract class Trade {
             }
         };
 
-        this.countdown.runTaskTimer(TradeSystem.getInstance(), 0, interval);
+        this.countdown = timer;
+        timer.start(getPlayer(Perspective.PRIMARY), interval);
+        if (timer.isCancelled() && this.countdown == timer) this.countdown = null; // Folia: the initiating trader already left
 
         return future;
     }
@@ -699,7 +756,16 @@ public abstract class Trade {
     }
 
     private synchronized void cancel(@Nullable String message, boolean alreadyCalled, @Nullable String ownedReason) {
-        if (cancelling) return;  // already cancelling
+        if (cancelling) {
+            // already cancelling; Folia: settle this thread's trader now (e.g. on quit, before the player is saved)
+            settleOwnedSides();
+            return;
+        }
+
+        if (!colocated()) {
+            cancelAcrossRegions(message, alreadyCalled, ownedReason);
+            return;
+        }
 
         TradeResult[] results = createResults();
 
@@ -753,6 +819,102 @@ public abstract class Trade {
         }
 
         closeTrade(results);
+    }
+
+    /**
+     * Folia only: cancels a trade whose traders are on different region threads (one was moved away
+     * mid-trade). No thread may touch both, so each trader's half - own offer and cursor back, menu
+     * closed, trade unregistered, notices - runs on that trader's own thread. Until a half has run,
+     * that trader's clicks are refused because the trade is cancelling (see TradeGUIListener).
+     */
+    private void cancelAcrossRegions(@Nullable String message, boolean alreadyCalled, @Nullable String ownedReason) {
+        if (!isActive()) return;
+
+        TradeResult[] results = createResults();
+        this.cancelling = true;
+
+        cleanUp();
+        if (countdown != null) {
+            countdown.cancel();
+            countdown = null;
+            countdownTicks = 0;
+        }
+
+        for (Perspective perspective : Perspective.main()) {
+            TradingGUI gui = guis[perspective.id()];
+            if (gui == null) continue;
+
+            Player player = gui.getPlayer();
+            pendingSides.put(perspective.id(), new PendingSide(player, () -> settleCancelledSide(perspective, gui, message, ownedReason)));
+            TradeThreads.now(player, () -> settleSide(perspective.id()));
+        }
+
+        // viewers which are not traders only need their menu closed
+        this.getViewers().filter(nonTrader()).forEach(p -> TradeThreads.now(p, () -> {
+            moveCursorItemToInventory(p);
+            p.closeInventory();
+        }));
+
+        if (!alreadyCalled) cancelling(message);
+        if (initiationServer)
+            TradeLogService.log(names[0], names[1], message == null ? TradeLog.CANCELLED.get() : TradeLog.CANCELLED_WITH_REASON.get(message));
+
+        closeTrade(results);
+    }
+
+    private void settleSide(int id) {
+        PendingSide side = pendingSides.remove(id);
+        if (side != null) side.settle().run();
+    }
+
+    /**
+     * Runs the pending cancel halves of the traders this thread owns (all of them while disabling).
+     */
+    private void settleOwnedSides() {
+        if (pendingSides.isEmpty()) return;
+
+        boolean disabling = !TradeSystem.getInstance().isEnabled();
+        for (Integer id : new ArrayList<>(pendingSides.keySet())) {
+            PendingSide side = pendingSides.get(id);
+            if (side != null && (disabling || TradeThreads.owns(side.player()))) settleSide(id);
+        }
+    }
+
+    /**
+     * One trader's half of {@link #cancelAcrossRegions}; runs on that trader's own thread.
+     */
+    private void settleCancelledSide(@NotNull Perspective perspective, @NotNull TradingGUI gui, @Nullable String message, @Nullable String ownedReason) {
+        Player player = gui.getPlayer();
+
+        // take the own offer out of the menu before returning it, so it cannot be taken twice
+        boolean droppedItems = false;
+        for (Integer slot : this.slots) {
+            ItemStack item = gui.getItem(slot);
+            if (item == null || item.getType() == Material.AIR) continue;
+
+            ItemStack back = item.clone();
+            gui.setItem(slot, null);
+            droppedItems |= addOrDropItem(player, back);
+        }
+        for (Integer slot : this.otherSlots) gui.setItem(slot, null);
+        droppedItems |= moveCursorItemToInventory(player);
+
+        player.closeInventory();
+        player.updateInventory();
+        gui.destroy();
+        this.guis[perspective.id()] = null;
+        TradeSystem.handler().unregisterTrade(names[perspective.id()]);
+
+        if (message != null) {
+            if (ownedReason == null) player.sendMessage(message);
+            else PlayerText.notice(this, player, ownedReason, () -> message);
+        } else {
+            PlayerText.notice(this, player, "Trade_Was_Cancelled", () -> sendMessage(perspective,
+                    Lang.getPrefix() + getPlaceholderMessage(perspective, "Trade_Was_Cancelled")));
+        }
+
+        if (droppedItems) PlayerText.notice(this, player, "Items_Dropped",
+                () -> Lang.getPrefix() + getPlaceholderMessage(perspective, "Items_Dropped"));
     }
 
     private void sendReport(@NotNull Perspective perspective, boolean droppedItems, @NotNull TradeResult result) {
@@ -812,6 +974,7 @@ public abstract class Trade {
      * @param results The results of the trade.
      */
     private void closeTrade(@NotNull TradeResult @NotNull [] results) {
+        this.closed = true;
         callFinishEvent(results);
     }
 
@@ -992,8 +1155,7 @@ public abstract class Trade {
                             e.setCancelled(true);
                         else {
                             //player picked up an item, check trading items -> balance items of other trader
-                            UniversalScheduler.getScheduler(TradeSystem.getInstance()).runTaskLater(
-                            () -> onItemPickUp(getPerspective(e.getPlayer())), 1);
+                            later(1, () -> onItemPickUp(getPerspective(e.getPlayer())));
                         }
                     }
                 }
@@ -1009,6 +1171,7 @@ public abstract class Trade {
      */
     public void cancelItemOverflow(@NotNull Perspective perspective) {
         if (!isActive()) return;
+        if (!guardThreads()) return;
         Player player = getPlayer(perspective);
         if (player == null) return;
 
@@ -1269,6 +1432,8 @@ public abstract class Trade {
     }
 
     public void handleClickResult(@NotNull TradeIcon tradeIcon, @NotNull Perspective perspective, @NotNull Perspective viewer, @NotNull GUI gui, @NotNull IconResult result) {
+        if (cancelling || !guardThreads()) return;
+
         switch (result) {
             case PASS:
                 return;
@@ -1317,10 +1482,11 @@ public abstract class Trade {
     }
 
     protected final void closeInventories() {
-        this.getViewers().forEach(p -> {
+        // Folia: a viewer on another region thread closes on its own thread
+        this.getViewers().forEach(p -> TradeThreads.now(p, () -> {
             p.closeInventory();
             p.updateInventory();
-        });
+        }));
 
         guis().forEach(TradingGUI::destroy);
 
@@ -1329,6 +1495,15 @@ public abstract class Trade {
 
         // fix buggy inventories of other plugins that were opened while trading: close again later
         // fix black screens for bedrock players: run with higher delay >10
+        if (TradeThreads.regionized()) {
+            // Folia: only the viewer's own thread may close its menu; the global region owns no player
+            this.getViewers().forEach(p -> TradeThreads.later(p, () -> {
+                p.closeInventory();
+                p.updateInventory();
+            }, FloodgateUtils.isBedrockPlayer(p) ? 30 : 1));
+            return;
+        }
+
         UniversalScheduler.getScheduler(TradeSystem.getInstance()).runTask(
         () -> this.getViewers().filter(FloodgateUtils::isNonBedrockPlayer).forEach(p -> {
             p.closeInventory();
@@ -1378,7 +1553,7 @@ public abstract class Trade {
         if (perspective.isTertiary()) return false;
 
         TradingGUI gui = guis[perspective.id()];
-        return gui.isOpen() && !gui.isWaiting();
+        return gui != null && gui.isOpen() && !gui.isWaiting();
     }
 
     public void acknowledgeGuiSwitch(@NotNull Player player) {

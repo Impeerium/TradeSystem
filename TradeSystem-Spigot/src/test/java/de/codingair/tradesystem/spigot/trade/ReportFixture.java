@@ -27,6 +27,11 @@ public final class ReportFixture {
         return trade;
     }
 
+    /** Uses the real countdown (and its scheduling) instead of the completed fixture future. */
+    public static void realCountdown(Trade trade) {
+        doCallRealMethod().when(trade).runCountdown();
+    }
+
     public static void droppedOnReturn(Trade trade, boolean first, boolean second) {
         doReturn(new boolean[]{first, second}).when(trade).returnItemsToOwner();
     }

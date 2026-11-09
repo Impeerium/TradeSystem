@@ -7,6 +7,7 @@ import de.codingair.codingapi.player.gui.inventory.v2.exceptions.IsWaitingExcept
 import de.codingair.codingapi.player.gui.inventory.v2.exceptions.NoPageException;
 import de.codingair.tradesystem.spigot.TradeSystem;
 import de.codingair.tradesystem.spigot.trade.Trade;
+import de.codingair.tradesystem.spigot.trade.TradeThreads;
 import de.codingair.tradesystem.spigot.utils.FloodgateUtils;
 import de.codingair.tradesystem.spigot.utils.Lang;
 import de.codingair.tradesystem.spigot.localization.PlayerText;
@@ -77,6 +78,18 @@ public class TradingGUI extends GUI {
     @Override
     protected void continueGUI() throws IsNotWaitingException {
         if (trade.isCancelling()) return;
+        if (!TradeThreads.owns(getPlayer())) {
+            // Folia: CodingAPI reopens this menu after a nested menu (shulker peek) from a global-region
+            // task, but only the trader's own thread may open an inventory.
+            TradeThreads.later(getPlayer(), () -> {
+                if (!isWaiting() || trade.isCancelling()) return;
+                try {
+                    continueGUI();
+                } catch (IsNotWaitingException ignored) {
+                }
+            }, 1);
+            return;
+        }
         super.continueGUI();
         if (titleTransport != null) synchronizeTitle();
     }

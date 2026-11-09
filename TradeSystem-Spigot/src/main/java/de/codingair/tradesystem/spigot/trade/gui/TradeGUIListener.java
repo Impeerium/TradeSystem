@@ -7,6 +7,7 @@ import de.codingair.codingapi.player.gui.inventory.v2.exceptions.NoPageException
 import de.codingair.codingapi.server.specification.Version;
 import de.codingair.tradesystem.spigot.TradeSystem;
 import de.codingair.tradesystem.spigot.trade.Trade;
+import de.codingair.tradesystem.spigot.trade.TradeThreads;
 import de.codingair.tradesystem.spigot.trade.gui.layout.shulker.ShulkerPeekGUI;
 import de.codingair.tradesystem.spigot.trade.gui.layout.utils.Perspective;
 import de.codingair.tradesystem.spigot.utils.CompatibilityUtilEvent;
@@ -14,6 +15,7 @@ import de.codingair.tradesystem.spigot.utils.Lang;
 import de.codingair.tradesystem.spigot.localization.PlayerText;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.Cancellable;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.ClickType;
@@ -68,6 +70,8 @@ public class TradeGUIListener implements Listener {
             Trade trade = TradeSystem.handler().getTrade(player);
 
             if (trade != null && trade.inMainGUI(player)) {
+                if (refused(trade, e)) return;
+
                 // Cancelling the drag event resets the cursor in a later tick.
                 // Therefore, simply remove all new items added during this event.
                 e.setCancelled(false);
@@ -90,6 +94,8 @@ public class TradeGUIListener implements Listener {
             Trade trade = TradeSystem.handler().getTrade(player);
 
             if (trade != null && trade.inMainGUI(player)) {
+                if (refused(trade, e)) return;
+
                 Perspective perspective = trade.getPerspective(player);
 
                 boolean topInventory = CompatibilityUtilEvent.getTopInventory(e).equals(e.getClickedInventory());
@@ -109,6 +115,8 @@ public class TradeGUIListener implements Listener {
             Trade trade = TradeSystem.handler().getTrade(player);
 
             if (trade != null && trade.inMainGUI(player)) {
+                if (refused(trade, e)) return;
+
                 // check shulker box first because this event might already be cancelled
                 Perspective perspective = trade.getPerspective(player);
                 if (checkForShulkerBoxes(e, trade, player, perspective)) {
@@ -126,6 +134,8 @@ public class TradeGUIListener implements Listener {
             Trade trade = TradeSystem.handler().getTrade(player);
 
             if (trade != null && trade.inMainGUI(player)) {
+                if (refused(trade, e)) return;
+
                 // allow blocking by other plugins
                 if (e.isCancelled()) return;
 
@@ -154,10 +164,29 @@ public class TradeGUIListener implements Listener {
         }
 
         // item overflow will be invoked by synchronization later
+        if (TradeThreads.regionized()) {
+            // Folia: on the clicking trader's own thread; the global region owns no player
+            Player player = trade.getPlayer(perspective);
+            if (player != null) TradeThreads.later(player, () -> trade.synchronizePlayerInventory(perspective), 1);
+            return;
+        }
+
         UniversalScheduler.getScheduler(TradeSystem.getInstance()).runTask(() -> {
             // update own inventory later
             trade.synchronizePlayerInventory(perspective);
         });
+    }
+
+    /**
+     * Refuses every inventory action on a trade that is being cancelled, or (Folia) whose traders are no
+     * longer on one region thread; the latter also cancels the trade.
+     *
+     * @return True if the event was refused.
+     */
+    private boolean refused(@NotNull Trade trade, @NotNull Cancellable event) {
+        if (!trade.isCancelling() && trade.guardThreads()) return false;
+        event.setCancelled(true);
+        return true;
     }
 
     private boolean checkForShulkerBoxes(@NotNull InventoryClickEvent event, @NotNull Trade trade, @NotNull Player player, @NotNull Perspective perspective) {

@@ -18,14 +18,14 @@ import org.bukkit.event.player.PlayerPickupItemEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.Map;
 import java.util.UUID;
 
 public class TradeListener implements Listener, ChatButtonListener {
     private static final long BUFFER_TIME = 1000;
     private static final long BUFFER_TIME_OFFLINE = 1000 * 60 * 10;
-    private final Map<String, Long> invitationBuffer = new HashMap<>();
+    private final Map<String, Long> invitationBuffer = new ConcurrentHashMap<>(); // Folia: clicks from several region threads
 
     @Override
     public boolean onAsyncClick(Player player, UUID id, String type) {
