@@ -18,7 +18,8 @@ public final class TradeTitles {
 
     public static Component create(PlayerText.View view, String source, String countdownSource, boolean locked) {
         if (source == null || !"\uF810".equals(countdownSource)) return null;
-        var match = SOURCE.matcher(source);
+        // The Nexo migration (2026-11-09) respelled the offsets as shift glyphs; match either spelling.
+        var match = SOURCE.matcher(TitleForms.offsets(source));
         if (!match.matches()) return null;
         int nativeOffset = Integer.parseInt(match.group(1));
         if (Math.abs(nativeOffset) > 512) return null;
@@ -30,6 +31,11 @@ public final class TradeTitles {
         if (locked) line.moveTo(180 + nativeOffset).glyph(Component.text("\uF810", NamedTextColor.WHITE)
                 .font(Key.key("minecraft:default")), 176);
         return line.build();
+    }
+
+    /** True when the configured title and countdown are the installed artwork form in either offset spelling. */
+    public static boolean binds(String source, String countdownSource) {
+        return source != null && "\uF810".equals(countdownSource) && SOURCE.matcher(TitleForms.offsets(source)).matches();
     }
 
     public static boolean headingFits(PlayerText.View view) {

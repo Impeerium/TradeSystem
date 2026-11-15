@@ -51,6 +51,19 @@ public final class PlayerText {
         } catch (LinkageError unavailable) {
             plugin.getLogger().warning("Impeerium localization API is incompatible; retaining native language files.");
         }
+        if (backend != null) reportDetachedTitle(plugin);
+    }
+
+    /** A drifted GUI_Title silently shows the native (baked) title to every viewer; say so once at startup. */
+    private static void reportDetachedTitle(TradeSystem plugin) {
+        try {
+            String title = Lang.source("GUI_Title");
+            if (title != null && !TradeTitles.binds(title, Lang.source("Fancy_Countdown")))
+                plugin.getLogger().warning("binding detached: Languages/" + Lang.getLanguageKey()
+                        + ".yml GUI_Title/Fancy_Countdown no longer match the trade artwork form; every viewer sees the native title.");
+        } catch (RuntimeException failure) {
+            plugin.getLogger().warning("Trade title binding check unavailable (" + failure.getClass().getSimpleName() + ").");
+        }
     }
 
     public static void close() {

@@ -268,6 +268,25 @@ class PlayerMenuTest {
         Files.writeString(Path.of("target/trade-titles.json"), new com.google.gson.GsonBuilder().setPrettyPrinting().create().toJson(titles));
     }
 
+    /** Survival's EST.yml after the 2026-11-09 Nexo migration: the same moves spelled as nexo:shift glyphs. */
+    static final String SURVIVAL_NEXO_TITLE = "\uE105\uE102\uE101&f\uF813\uE108\uE106\uE105\uE104\uE103%tradesystem_countdown_fancy%";
+
+    @Test void nexoShiftSpellingBindsExactlyLikeTheItemsAdderOffsets() throws Exception {
+        assertEquals(TradeTitles.NATIVE_TITLE, TitleForms.offsets(SURVIVAL_NEXO_TITLE));
+        assertTrue(TradeTitles.binds(SURVIVAL_NEXO_TITLE, "\uF810"));
+        assertTrue(TradeTitles.binds(TradeTitles.NATIVE_TITLE, "\uF810"));
+        assertTrue(TradeTitles.binds("{nexo_shift_-19}&f\uF813%nexo_shift_-194%%tradesystem_countdown_fancy%", "\uF810"));
+        assertFalse(TradeTitles.binds(SURVIVAL_NEXO_TITLE, " &7- &e%seconds%s"));
+        assertFalse(TradeTitles.binds("&fKaubandus %tradesystem_countdown_fancy%", "\uF810"));
+        for (Language language : Language.values()) for (boolean locked : List.of(false, true)) {
+            var view = fixture.wording.capture(fixture.player(language));
+            Component nexo = TradeTitles.create(view, SURVIVAL_NEXO_TITLE, "\uF810", locked);
+            assertNotNull(nexo);
+            assertEquals(TradeTitles.create(view, TradeTitles.NATIVE_TITLE, "\uF810", locked), nexo);
+            assertTrue(PlayerItems.plain(nexo).contains(language == Language.EN ? "TRADE" : "KAUBANDUS"));
+        }
+    }
+
     @Test void nativeReadyAndOfferChangesClearLockThroughRealPageRebuild() throws Exception {
         try (var scheduler = mockStatic(UniversalScheduler.class, RETURNS_DEEP_STUBS)) {
             TradeHandler handler = mock(TradeHandler.class);
