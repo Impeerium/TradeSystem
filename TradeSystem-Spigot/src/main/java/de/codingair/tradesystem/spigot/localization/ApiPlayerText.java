@@ -43,9 +43,10 @@ final class ApiPlayerText implements PlayerText.Backend {
     static PlayerText.Backend create(TradeSystem owner) {
         ImpeeriumApi api;
         try {
-            api = ImpeeriumApi.require(owner, 1, 11);
+            // 1.24: the catalog carries a Finnish (fi) column, which an older runtime rejects whole.
+            api = ImpeeriumApi.require(owner, 1, 24);
         } catch (IllegalStateException unavailable) {
-            owner.getLogger().warning("ImpeeriumAPI 1.11 service is unavailable; retaining native language files.");
+            owner.getLogger().warning("ImpeeriumAPI 1.24 service is unavailable; retaining native language files.");
             return null;
         }
         return new ApiPlayerText(owner, api.localization());

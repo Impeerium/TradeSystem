@@ -172,13 +172,13 @@ class PlayerMenuTest {
     @Test void allNativeStatusVariantsUseTheActualRecipient() {
         for (Language language : Language.values()) {
             Trade trade = trade();Player viewer = fixture.player(language);ItemStack source = item("Native", "Keep");
-            String suffix = language == Language.EN ? "not ready" : "pole valmis";
+            String suffix = PlayerTextTest.pick(language, "pole valmis", "not ready", "ei valmis");
             var own = new StatusIcon.NotReadyIcon(source).finishPresentation(source, trade, Perspective.PRIMARY, viewer);
             var other = new ShowStatusIcon.ShowNotReadyIcon(source).finishPresentation(source, trade, Perspective.PRIMARY, viewer);
             assertTrue(PlayerItems.plain(own.getItemMeta().displayName()).endsWith(suffix));
             assertEquals(own.getItemMeta().displayName(), other.getItemMeta().displayName());
             var cancel = new CancelIcon(source).finishPresentation(source, trade, Perspective.PRIMARY, viewer);
-            assertEquals(language == Language.EN ? "Cancel trade" : "Tühista tehing", PlayerItems.plain(cancel.getItemMeta().displayName()));
+            assertEquals(PlayerTextTest.pick(language, "Tühista tehing", "Cancel trade", "Peruuta vaihto"), PlayerItems.plain(cancel.getItemMeta().displayName()));
             assertEquals(List.of("Keep"), lore(cancel));
         }
     }
@@ -226,7 +226,7 @@ class PlayerMenuTest {
             doReturn("1,234.5K").when(sign).makeString(any(), any(), any(), any(), anyBoolean());
             String[] lines = sign.buildSignLines(trade, Perspective.PRIMARY, viewer);
             assertEquals(4, lines.length);assertEquals("1,234.5K", lines[0]);
-            assertEquals(language == Language.EN ? "Enter amount" : "Sisesta kogus", lines[2]);
+            assertEquals(PlayerTextTest.pick(language, "Sisesta kogus", "Enter amount", "Kirjoita määrä"), lines[2]);
             assertTrue(Arrays.stream(lines).allMatch(Objects::nonNull));
         }
     }
@@ -256,7 +256,7 @@ class PlayerMenuTest {
             String source = TradeTitles.NATIVE_TITLE.replace("_-188:", "_-" + offset + ":");
             Component title = TradeTitles.create(view, source, "\uF810", locked);
             assertNotNull(title);assertTrue(TradeTitles.headingFits(view));
-            assertTrue(PlayerItems.plain(title).contains(language == Language.EN ? "TRADE" : "KAUBANDUS"));
+            assertTrue(PlayerItems.plain(title).contains(PlayerTextTest.pick(language, "KAUBANDUS", "TRADE", "VAIHTO")));
             String json = GsonComponentSerializer.gson().serialize(title);
             assertEquals(title, GsonComponentSerializer.gson().deserialize(json));
             assertTrue(json.contains("impeerium:tradesystem_frames"));assertTrue(json.contains("impeerium:gui_label_p27"));
@@ -283,7 +283,7 @@ class PlayerMenuTest {
             Component nexo = TradeTitles.create(view, SURVIVAL_NEXO_TITLE, "\uF810", locked);
             assertNotNull(nexo);
             assertEquals(TradeTitles.create(view, TradeTitles.NATIVE_TITLE, "\uF810", locked), nexo);
-            assertTrue(PlayerItems.plain(nexo).contains(language == Language.EN ? "TRADE" : "KAUBANDUS"));
+            assertTrue(PlayerItems.plain(nexo).contains(PlayerTextTest.pick(language, "KAUBANDUS", "TRADE", "VAIHTO")));
         }
     }
 
@@ -315,7 +315,7 @@ class PlayerMenuTest {
                 assertTrue(PlayerItems.plain(titles.getAllValues().get(0)).contains("\uF810"));
                 assertFalse(PlayerItems.plain(titles.getAllValues().get(1)).contains("\uF810"));
                 assertTrue(PlayerItems.plain(titles.getAllValues().get(1))
-                        .contains(language == Language.EN ? "TRADE" : "KAUBANDUS"));
+                        .contains(PlayerTextTest.pick(language, "KAUBANDUS", "TRADE", "VAIHTO")));
                 assertSame(menu.inventory, menu.gui.getInventory());
                 assertEquals(offer, menu.inventory.getItem(10));
                 assertSame(cursor, menu.viewer.getItemOnCursor());

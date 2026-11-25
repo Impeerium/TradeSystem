@@ -1,0 +1,379 @@
+# Player-facing wording owned by TradeSystem. Proper names and commands are typed arguments.
+namespace: tradesystem
+messages:
+  enter_correct_amount:
+    args: {}
+    et: <#D0EB06>Sisesta sobiv kogus.</#D0EB06>
+    en: <#D0EB06>Enter a valid amount.</#D0EB06>
+  only_x_amount:
+    args:
+      amount: text
+      type: component
+    et: <#D0EB06>Sul on ainult <arg:amount> <arg:type>.</#D0EB06>
+    en: <#D0EB06>You only have <arg:amount> <arg:type>.</#D0EB06>
+  trade_was_cancelled:
+    args: {}
+    et: <#D0EB06>Tehing on tühistatud.</#D0EB06>
+    en: <#D0EB06>The trade was cancelled.</#D0EB06>
+  trade_was_finished:
+    args: {}
+    et: <#D0EB06>Tehing on tehtud.</#D0EB06>
+    en: <#D0EB06>The trade is complete.</#D0EB06>
+  cannot_trade_with_yourself:
+    args: {}
+    et: <#D0EB06>Sa ei saa endaga kaubelda.</#D0EB06>
+    en: <#D0EB06>You cannot trade with yourself.</#D0EB06>
+  player_not_online:
+    args: {}
+    et: <#D0EB06>Mängija pole võrgus.</#D0EB06>
+    en: <#D0EB06>The player is offline.</#D0EB06>
+  want_to_trade:
+    args:
+      accept: component
+      deny: component
+      player: text
+    et: <#D0EB06><arg:player> soovib sinuga kaubelda. <arg:accept> <arg:deny></#D0EB06>
+    en: <#D0EB06><arg:player> wants to trade with you. <arg:accept> <arg:deny></#D0EB06>
+  want_to_trade_bedrock:
+    args:
+      accept: component
+      deny: component
+      player: text
+    et: '<#D0EB06><arg:player> soovib sinuga kaubelda. Nõustumiseks: <arg:accept>; keeldumiseks: <arg:deny>.</#D0EB06>'
+    en: '<#D0EB06><arg:player> wants to trade with you. Accept: <arg:accept>; decline: <arg:deny>.</#D0EB06>'
+  want_to_trade_hover:
+    args: {}
+    et: Vajuta siia
+    en: Click here
+  invitation_accept_hover:
+    args: {}
+    et: Nõustu tehingu taotlusega
+    en: Accept the trade request
+  invitation_deny_hover:
+    args: {}
+    et: Keeldu tehingu taotlusest
+    en: Decline the trade request
+  player_is_invited:
+    args:
+      player: text
+    et: <#D0EB06>Saatsid mängijale <arg:player> tehingu taotluse.</#D0EB06>
+    en: <#D0EB06>You sent a trade request to <arg:player>.</#D0EB06>
+  command_how_to:
+    args:
+      command: component
+      accept: text
+      deny: text
+      toggle: text
+    et: '<#D0EB06>Kasutus: <arg:command> [mängija / <arg:accept> / <arg:deny> / <arg:toggle>]</#D0EB06>'
+    en: '<#D0EB06>Usage: <arg:command> [player / <arg:accept> / <arg:deny> / <arg:toggle>]</#D0EB06>'
+  command_how_to_accept:
+    args:
+      command: component
+    et: '<#D0EB06>Kasutus: <arg:command> \<mängija></#D0EB06>'
+    en: '<#D0EB06>Usage: <arg:command> \<player></#D0EB06>'
+  command_how_to_deny:
+    args:
+      command: component
+    et: '<#D0EB06>Kasutus: <arg:command> \<mängija></#D0EB06>'
+    en: '<#D0EB06>Usage: <arg:command> \<player></#D0EB06>'
+  player_of_request_not_online:
+    args: {}
+    et: <#D0EB06>Tehingu taotluse saatja pole enam võrgus.</#D0EB06>
+    en: <#D0EB06>The player who sent the trade request is no longer online.</#D0EB06>
+  request_accepted:
+    args: {}
+    et: <#D0EB06>Võtsid tehingu taotluse vastu.</#D0EB06>
+    en: <#D0EB06>You accepted the trade request.</#D0EB06>
+  request_was_accepted:
+    args:
+      player: text
+    et: <#D0EB06><arg:player> võttis sinu tehingu taotluse vastu.</#D0EB06>
+    en: <#D0EB06><arg:player> accepted your trade request.</#D0EB06>
+  request_denied:
+    args: {}
+    et: <#D0EB06>Keeldusid tehingu taotlusest.</#D0EB06>
+    en: <#D0EB06>You declined the trade request.</#D0EB06>
+  request_was_denied:
+    args:
+      player: text
+    et: <#D0EB06><arg:player> keeldus sinu tehingu taotlusest.</#D0EB06>
+    en: <#D0EB06><arg:player> declined your trade request.</#D0EB06>
+  no_request_found:
+    args: {}
+    et: <#D0EB06>Sa pole sellelt mängijalt tehingu taotlust saanud.</#D0EB06>
+    en: <#D0EB06>You have no trade request from this player.</#D0EB06>
+  no_requests_found:
+    args: {}
+    et: <#D0EB06>Sul pole tehingu taotlusi.</#D0EB06>
+    en: <#D0EB06>You have no trade requests.</#D0EB06>
+  too_many_requests:
+    args: {}
+    et: <#D0EB06>Sul on mitu tehingu taotlust. Täpsusta mängija nimi.</#D0EB06>
+    en: <#D0EB06>You have several trade requests. Specify the player name.</#D0EB06>
+  gui_title:
+    args: {}
+    et: KAUBANDUS
+    en: TRADE
+  money_amount:
+    args: {}
+    et: Rahasumma
+    en: Amount of money
+  coin:
+    args: {}
+    et: Münt
+    en: Coin
+  coins:
+    args: {}
+    et: Mündid
+    en: Coins
+  token:
+    args: {}
+    et: Žetoon
+    en: Token
+  tokens:
+    args: {}
+    et: Žetoonid
+    en: Tokens
+  playerpoint:
+    args: {}
+    et: Mängijapunkt
+    en: Player point
+  playerpoints:
+    args: {}
+    et: Mängijapunktid
+    en: Player points
+  claimblock:
+    args: {}
+    et: Kaitseplokk
+    en: Claim block
+  claimblocks:
+    args: {}
+    et: Kaitseplokid
+    en: Claim blocks
+  status:
+    args: {}
+    et: Staatus
+    en: Status
+  ready:
+    args: {}
+    et: Valmis
+    en: Ready
+  not_ready:
+    args: {}
+    et: Pole valmis
+    en: Not ready
+  status_ready:
+    args: {}
+    et: 'Staatus: <green>valmis</green>'
+    en: 'Status: <green>ready</green>'
+  status_not_ready:
+    args: {}
+    et: 'Staatus: <red>pole valmis</red>'
+    en: 'Status: <red>not ready</red>'
+  wait_for_other_player:
+    args: {}
+    et: Oota teist mängijat…
+    en: Wait for the other player…
+  trade_only_with_objects:
+    args: {}
+    et: Tehingu tegemiseks pead midagi pakkuma.
+    en: Offer something to complete the trade.
+  click_to_change:
+    args: {}
+    et: Vajuta muutmiseks
+    en: Click to change
+  cancel_trade:
+    args: {}
+    et: Tühista tehing
+    en: Cancel trade
+  not_able_to_trade:
+    args: {}
+    et: <#D0EB06>Sul pole luba kaubelda.</#D0EB06>
+    en: <#D0EB06>You do not have permission to trade.</#D0EB06>
+  player_is_not_able_trade:
+    args: {}
+    et: <#D0EB06>See mängija ei saa kaubelda.</#D0EB06>
+    en: <#D0EB06>This player cannot trade.</#D0EB06>
+  trade_spam:
+    args: {}
+    et: <#D0EB06>Oled sellele mängijale juba tehingu taotluse saatnud.</#D0EB06>
+    en: <#D0EB06>You have already sent this player a trade request.</#D0EB06>
+  player_is_not_in_range:
+    args:
+      player: text
+    et: <#D0EB06><arg:player> on kauplemiseks liiga kaugel.</#D0EB06>
+    en: <#D0EB06><arg:player> is too far away to trade.</#D0EB06>
+  cannot_trade_in_that_gamemode:
+    args: {}
+    et: <#D0EB06>Sa ei saa selles mängurežiimis kaubelda.</#D0EB06>
+    en: <#D0EB06>You cannot trade in this game mode.</#D0EB06>
+  other_cannot_trade_in_that_gamemode:
+    args: {}
+    et: <#D0EB06>Teine mängija ei saa oma mängurežiimis kaubelda.</#D0EB06>
+    en: <#D0EB06>The other player cannot trade in their game mode.</#D0EB06>
+  trade_cancelled_by_attack:
+    args: {}
+    et: <#D0EB06>Tehing tühistati rünnaku tõttu.</#D0EB06>
+    en: <#D0EB06>The trade was cancelled because of an attack.</#D0EB06>
+  trade_partner_no_space:
+    args: {}
+    et: <#D0EB06>Teise mängija seljakotis pole piisavalt ruumi.</#D0EB06>
+    en: <#D0EB06>The other player does not have enough inventory space.</#D0EB06>
+  trade_offline:
+    args: {}
+    et: <#D0EB06>Tehingu taotlused on välja lülitatud.</#D0EB06>
+    en: <#D0EB06>Trade requests are off.</#D0EB06>
+  trade_online:
+    args: {}
+    et: <#D0EB06>Tehingu taotlused on sisse lülitatud.</#D0EB06>
+    en: <#D0EB06>Trade requests are on.</#D0EB06>
+  trade_partner_is_offline:
+    args: {}
+    et: <#D0EB06>See mängija ei võta tehingu taotlusi vastu.</#D0EB06>
+    en: <#D0EB06>This player is not accepting trade requests.</#D0EB06>
+  trade_you_are_offline:
+    args:
+      command: component
+    et: <#D0EB06>Tehingu taotluste lubamiseks vajuta <arg:command>.</#D0EB06>
+    en: <#D0EB06>To turn trade requests on, click <arg:command>.</#D0EB06>
+  trade_placed_blocked_item:
+    args: {}
+    et: <#D0EB06>Seda eset ei saa vahetada.</#D0EB06>
+    en: <#D0EB06>This item cannot be traded.</#D0EB06>
+  cannot_trade_in_bed:
+    args: {}
+    et: <#D0EB06>Sa ei saa voodis kaubelda.</#D0EB06>
+    en: <#D0EB06>You cannot trade while in bed.</#D0EB06>
+  cannot_trade_in_world:
+    args: {}
+    et: <#D0EB06>Sa ei saa selles maailmas kaubelda.</#D0EB06>
+    en: <#D0EB06>You cannot trade in this world.</#D0EB06>
+  other_cannot_trade_in_world:
+    args: {}
+    et: <#D0EB06>Teine mängija ei saa oma maailmas kaubelda.</#D0EB06>
+    en: <#D0EB06>The other player cannot trade in their world.</#D0EB06>
+  cannot_trade_while_invisible:
+    args: {}
+    et: <#D0EB06>Sa ei saa nähtamatuna kaubelda.</#D0EB06>
+    en: <#D0EB06>You cannot trade while invisible.</#D0EB06>
+  cannot_trade_in_region:
+    args: {}
+    et: <#D0EB06>Sa ei saa selles alas kaubelda.</#D0EB06>
+    en: <#D0EB06>You cannot trade in this region.</#D0EB06>
+  other_cannot_trade_in_region:
+    args: {}
+    et: <#D0EB06>Teine mängija ei saa oma alas kaubelda.</#D0EB06>
+    en: <#D0EB06>The other player cannot trade in their region.</#D0EB06>
+  other_is_already_trading:
+    args: {}
+    et: <#D0EB06>See mängija kaupleb juba kellegi teisega.</#D0EB06>
+    en: <#D0EB06>This player is already trading with someone else.</#D0EB06>
+  your_request_expired:
+    args:
+      player: text
+    et: <#D0EB06>Sinu tehingu taotlus mängijale <arg:player> aegus.</#D0EB06>
+    en: <#D0EB06>Your trade request to <arg:player> expired.</#D0EB06>
+  request_expired:
+    args:
+      player: text
+    et: <#D0EB06>Mängija <arg:player> tehingu taotlus aegus.</#D0EB06>
+    en: <#D0EB06>The trade request from <arg:player> expired.</#D0EB06>
+  fancy_countdown:
+    args:
+      seconds: integer
+    et: <arg:seconds> s
+    en: <arg:seconds>s
+  economy_error:
+    args: {}
+    et: <#D0EB06>Tehing tühistati maksevea tõttu.</#D0EB06>
+    en: <#D0EB06>The trade was cancelled because the payment could not be completed.</#D0EB06>
+  items_dropped:
+    args: {}
+    et: <#D0EB06>Su seljakott oli täis. Osa esemeid kukkus maha.</#D0EB06>
+    en: <#D0EB06>Your inventory was full. Some items were dropped on the ground.</#D0EB06>
+  sign_enter_amount:
+    args: {}
+    et: '^^^^^^^^
+
+      Sisesta kogus
+
+      ülemisele reale'
+    en: '^^^^^^^^
+
+      Enter amount
+
+      above'
+  levels:
+    args: {}
+    et: Tasemed
+    en: Levels
+  level:
+    args: {}
+    et: Tase
+    en: Level
+  too_little_exp:
+    args: {}
+    et: <#D0EB06>Sul pole vahetamiseks kogemuspunkte.</#D0EB06>
+    en: <#D0EB06>You have no experience points to trade.</#D0EB06>
+  exp_points:
+    args: {}
+    et: Kogemuspunktid
+    en: Experience points
+  exp_point:
+    args: {}
+    et: Kogemuspunkt
+    en: Experience point
+  balance_limit_reached:
+    args: {}
+    et: <#D0EB06>Su saldo ei ole kauplemiseks piisav.</#D0EB06>
+    en: <#D0EB06>Your balance is too low to trade.</#D0EB06>
+  economy_offer_title:
+    args: {}
+    et: Sinu pakkumine
+    en: Your offer
+  shulker_box:
+    args: {}
+    et: Shulkeri kast
+    en: Shulker box
+  trade_finish_report_receive:
+    args:
+      object: component
+    et: '  <green>+</green> <arg:object>'
+    en: '  <green>+</green> <arg:object>'
+  trade_finish_report_give:
+    args:
+      object: component
+    et: '  <red>−</red> <arg:object>'
+    en: '  <red>−</red> <arg:object>'
+  trade_finish_report_object_item:
+    args:
+      amount: integer
+      item: component
+    et: <arg:amount> × <arg:item>
+    en: <arg:amount> × <arg:item>
+  economy_value:
+    args:
+      amount: text
+      type: component
+    et: '<arg:type>: <arg:amount>'
+    en: '<arg:type>: <arg:amount>'
+  decoration_title:
+    args: {}
+    et: Kaubandus
+    en: Trade
+  decoration_help_offer:
+    args: {}
+    et: Pane siia esemed, mida soovid vahetada.
+    en: Place the items you want to trade here.
+  decoration_help_ready:
+    args: {}
+    et: Kui pakkumine sobib, märgi end valmis.
+    en: When the offer is right, mark yourself ready.
+  invitation_accept:
+    args: {}
+    et: <green>Nõustu</green>
+    en: <green>Accept</green>
+  invitation_deny:
+    args: {}
+    et: <red>Keeldu</red>
+    en: <red>Decline</red>

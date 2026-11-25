@@ -137,8 +137,8 @@ class PlayerIntegrationTest {
             assertFalse(configuration.isItemAllowedInInventory.apply(List.of(item), List.of(10)));
             assertEquals(before, item);
             var output = org.mockito.ArgumentCaptor.forClass(Component.class);verify(viewer).sendMessage(output.capture());
-            String expected = blocked ? language == Language.EN ? "This item cannot be traded." : "Seda eset ei saa vahetada."
-                    : language == Language.EN ? "The other player does not have enough inventory space." : "Teise mängija seljakotis pole piisavalt ruumi.";
+            String expected = blocked ? PlayerTextTest.pick(language, "Seda eset ei saa vahetada.", "This item cannot be traded.", "Tätä esinettä ei voi vaihtaa.")
+                    : PlayerTextTest.pick(language, "Teise mängija seljakotis pole piisavalt ruumi.", "The other player does not have enough inventory space.", "Toisen pelaajan tavaraluettelossa ei ole tarpeeksi tilaa.");
             assertEquals(expected, PlayerTextTest.plain(output.getValue()));verify(reports.handler).playBlockSound(viewer);
         }
     }

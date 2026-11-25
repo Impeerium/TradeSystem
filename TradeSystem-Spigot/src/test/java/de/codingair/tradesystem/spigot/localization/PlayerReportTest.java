@@ -89,7 +89,7 @@ class PlayerReportTest {
             var receiving = copy(result.getReceivingItems());var sending = copy(result.getSendingItems());
             var lines = TradeReports.prepare(trade, viewer, true, result, event(result));
             assertEquals(5, lines.size());
-            assertEquals(language == Language.EN ? "The trade is complete." : "Tehing on tehtud.", texts(lines).getFirst());
+            assertEquals(PlayerTextTest.pick(language, "Tehing on tehtud.", "The trade is complete.", "Vaihtokauppa on valmis."), texts(lines).getFirst());
             assertTrue(texts(lines).stream().anyMatch(text -> text.contains("7 × " + HOSTILE)));
             assertTrue(texts(lines).stream().anyMatch(text -> text.contains("2 × " + HOSTILE)));
             assertTrue(lines.stream().anyMatch(line -> line.component() != null && line.component().toString().contains("fixture:name")));
@@ -185,7 +185,7 @@ class PlayerReportTest {
             var lines = result.buildComponentEconomyReport(trade.presentationView(viewer));
             if (diff.signum() == 0) {assertTrue(lines.isEmpty());continue;}
             boolean singular = diff.abs().compareTo(BigDecimal.ONE) == 0;
-            String unit = language == Language.EN ? singular ? "Coin" : "Coins" : singular ? "Münt" : "Mündid";
+            String unit = singular ? PlayerTextTest.pick(language, "Münt", "Coin", "Kolikko") : PlayerTextTest.pick(language, "Mündid", "Coins", "Kolikot");
             assertEquals("  " + (diff.signum() > 0 ? "+" : "−") + " " + diff.abs().toPlainString() + " " + unit,
                     PlayerTextTest.plain(lines.getFirst()));
             verify(icon).makeString(same(trade), eq(Perspective.PRIMARY), same(viewer), eq(diff.abs()), eq(diff.signum() < 0));

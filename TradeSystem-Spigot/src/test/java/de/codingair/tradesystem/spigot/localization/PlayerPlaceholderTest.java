@@ -45,13 +45,15 @@ class PlayerPlaceholderTest {
     @Test void statusMeansRequestAvailabilityAndUsesRecipientOrRetainedTradeLanguage() {
         for (Language language : Language.values()) {
             Player viewer = fixture.player(language);
-            assertEquals(language == Language.EN ? "On" : "Sees", expansion.onPlaceholderRequest(viewer, "status"));
+            // CommonText on/off and the compact seconds unit come from the API common catalog, which has no fi in
+            // 1.24.0: Finnish viewers get the English word there (fi -> en -> et).
+            assertEquals(PlayerTextTest.pick(language, "Sees", "On", "On"), expansion.onPlaceholderRequest(viewer, "status"));
             when(handler.isOffline(viewer)).thenReturn(true);
-            assertEquals(language == Language.EN ? "Off" : "Väljas", expansion.onPlaceholderRequest(viewer, "STATUS"));
+            assertEquals(PlayerTextTest.pick(language, "Väljas", "Off", "Off"), expansion.onPlaceholderRequest(viewer, "STATUS"));
             Trade trade = countdown(viewer);trade.presentationView(viewer);
             fixture.preferences.put(viewer.getUniqueId(), new LanguageSnapshot(
                     language == Language.EN ? Language.ET : Language.EN, LanguageSnapshot.State.EXPLICIT, 2));
-            assertEquals(language == Language.EN ? "Off" : "Väljas", expansion.onPlaceholderRequest(viewer, "status"));
+            assertEquals(PlayerTextTest.pick(language, "Väljas", "Off", "Off"), expansion.onPlaceholderRequest(viewer, "status"));
         }
     }
 
@@ -67,7 +69,7 @@ class PlayerPlaceholderTest {
             assertEquals("Owner 2 <custom>", expansion.onPlaceholderRequest(viewer, "countdown_fancy"));
             fixture.lang.when(() -> Lang.source("Fancy_Countdown")).thenReturn(" &7- &e%seconds%s");
             fixture.lang.when(() -> Lang.get("Fancy_Countdown")).thenReturn(" §7- §e%seconds%s");
-            assertEquals(language == Language.EN ? " §7- §e2s" : " §7- §e2 s", expansion.onPlaceholderRequest(viewer, "countdown_fancy"));
+            assertEquals(PlayerTextTest.pick(language, " §7- §e2 s", " §7- §e2s", " §7- §e2s"), expansion.onPlaceholderRequest(viewer, "countdown_fancy"));
             doReturn(null).when(trade).getCountdown();
             assertEquals("", expansion.onPlaceholderRequest(viewer, "countdown_fancy"));
         }

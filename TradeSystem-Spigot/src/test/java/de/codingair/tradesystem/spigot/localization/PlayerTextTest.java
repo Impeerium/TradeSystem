@@ -84,6 +84,11 @@ class PlayerTextTest {
         return PlayerTextTest.class.getClassLoader().getResourceAsStream(name);
     }
 
+    /** Expected text per viewer language; fi strings are the catalog's imported fi rows (or the en fallback). */
+    static String pick(Language language, String et, String en, String fi) {
+        return language == Language.ET ? et : language == Language.FI ? fi : en;
+    }
+
     static String plain(Component value) {
         return PlainTextComponentSerializer.plainText().serialize(value);
     }
@@ -106,7 +111,7 @@ class PlayerTextTest {
         enabledApiServer();Player viewer = player(Language.EN);LanguageSnapshot before = preferences.get(viewer.getUniqueId());
         try (var api = mockStatic(ImpeeriumApi.class)) {
             ImpeeriumApi facade = mock(ImpeeriumApi.class);when(facade.localization()).thenReturn(service);
-            api.when(() -> ImpeeriumApi.require(owner, 1, 11)).thenReturn(facade);
+            api.when(() -> ImpeeriumApi.require(owner, 1, 24)).thenReturn(facade);
             for (int i = 0; i < 2; i++) {
                 PlayerText.initialize(owner);
                 assertEquals("The trade is complete.", plain(PlayerText.capture(viewer).render("Trade_Was_Finished")));
@@ -120,7 +125,7 @@ class PlayerTextTest {
         lang.when(() -> Lang.get(anyString(), same(viewer), any(Lang.P[].class))).thenReturn("Native fallback");
         for (Throwable failure : List.of(new IllegalStateException("synthetic"), new NoClassDefFoundError("synthetic"))) {
             try (var api = mockStatic(ImpeeriumApi.class)) {
-                api.when(() -> ImpeeriumApi.require(owner, 1, 11)).thenThrow(failure);
+                api.when(() -> ImpeeriumApi.require(owner, 1, 24)).thenThrow(failure);
                 PlayerText.initialize(owner);assertNull(PlayerText.capture(viewer));
                 Lang.send(viewer, "Trade_Was_Cancelled");verify(viewer).sendMessage("Native fallback");
                 clearInvocations(viewer);
@@ -206,7 +211,7 @@ class PlayerTextTest {
             var sent = org.mockito.ArgumentCaptor.forClass(Component.class);
             verify(recipient).sendMessage(sent.capture());
             Component output = sent.getValue();
-            assertTrue(plain(output).contains(language == Language.ET ? "soovib sinuga kaubelda" : "wants to trade with you"));
+            assertTrue(plain(output).contains(pick(language, "soovib sinuga kaubelda", "wants to trade with you", "haluaa käydä kauppaa kanssasi")));
             assertEquals(Set.of("/vaheta jah Alex", "/vaheta ei Alex"), new HashSet<>(clickTargets(output)));
         }
     }
